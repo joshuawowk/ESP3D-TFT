@@ -82,6 +82,24 @@ idf.py -B build-debug -DSDKCONFIG=build-debug/sdkconfig \
   -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.debug" build
 ```
 
+## Bench mode (no printer needed)
+
+To test the display ↔ bridge wiring before the printer is connected, build
+with `sdkconfig.bench`. While no USB device is plugged in, the bridge passes
+the display UART straight through to its console port, so a PC on the
+**UART** port can play the printer, for example with the Marlin simulator in
+`tools/fw_simulator`:
+
+```bash
+idf.py -B build-bench -DSDKCONFIG=build-bench/sdkconfig \
+  -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.bench" build
+```
+
+The display should then show the simulator's temperatures. Logging is off in
+this mode so it does not mix with the G-code. Reflash the normal build before
+connecting the printer (plugging a printer in also takes over from the
+passthrough).
+
 ## Configuration (`idf.py menuconfig` → USB host bridge)
 
 | Option | Default | |
@@ -92,4 +110,5 @@ idf.py -B build-debug -DSDKCONFIG=build-debug/sdkconfig \
 | `BRIDGE_USB_BAUDRATE` | 115200 | must match the printer firmware `BAUDRATE` |
 | `BRIDGE_ASSERT_DTR` | off | see Printer reset safety |
 | `BRIDGE_LED_GPIO` | 38 | -1 disables the LED |
+| `BRIDGE_CONSOLE_PASSTHROUGH` | off | bench mode, see above |
 | `BRIDGE_LOG_TRAFFIC` | off | bring-up only |

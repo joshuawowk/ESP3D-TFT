@@ -59,7 +59,24 @@ static CdcAcmDevice *s_dev = nullptr;  // guarded by s_dev_mutex
 static std::atomic<uint32_t> s_usb_to_uart_bytes{0};
 static std::atomic<uint32_t> s_uart_to_usb_bytes{0};
 static std::atomic<uint32_t> s_dropped_bytes{0};
+static std::atomic<bool> s_connected{false};
 static led_strip_handle_t s_led = nullptr;
+
+#ifdef CONFIG_BRIDGE_CONSOLE_PASSTHROUGH
+#define CONSOLE_UART UART_NUM_0
+static std::atomic<uint32_t> s_console_bytes{0};
+
+// PC (console port) -> display, only while no printer is connected
+static void console_rx_task(void *arg) {
+  static uint8_t buf[UART_CHUNK];
+  while (true) {
+    int len = uart_read_bytes(CONSOLE_UART, buf, sizeof(buf), pdMS_TO_TICKS(5));
+    if (len > 0 && !s_connected) {
+      uart_write_bytes(BRIDGE_UART, buf, len);
+    }
+  }
+}
+#endif
 
 enum class LedState { waiting, connected };
 
@@ -157,6 +174,14 @@ static void uart_rx_task(void *arg) {
     if (sent) {
       s_uart_to_usb_bytes += len;
     } else {
+#ifdef CONFIG_BRIDGE_CONSOLE_PASSTHROUGH
+      if (!s_connected) {
+        // Bench mode: the PC on the console port plays the printer
+        uart_write_bytes(CONSOLE_UART, buf, len);
+        s_console_bytes += len;
+        continue;
+      }
+#endif
       // Printer not connected (or USB error): drop, the host will retry
       s_dropped_bytes += len;
     }
@@ -226,7 +251,16 @@ extern "C" void app_main(void) {
   VCP::register_driver<CH34x>();
 
   xTaskCreate(uart_rx_task, "uart_rx", 4096, NULL, 9, NULL);
+#ifdef CONFIG_BRIDGE_CONSOLE_PASSTHROUGH
+  ESP_LOGI(TAG, "Bench mode: console port stands in for the printer; logs off");
+  vTaskDelay(pdMS_TO_TICKS(20));
+  esp_log_level_set("*", ESP_LOG_NONE);
+  ESP_ERROR_CHECK(uart_driver_install(CONSOLE_UART, UART_BUF_SIZE,
+                                      UART_BUF_SIZE, 0, NULL, 0));
+  xTaskCreate(console_rx_task, "console_rx", 4096, NULL, 9, NULL);
+#else
   xTaskCreate(stats_task, "stats", 3072, NULL, 1, NULL);
+#endif
 
   cdc_acm_line_coding_t line_coding = {
       .dwDTERate = CONFIG_BRIDGE_USB_BAUDRATE,
@@ -275,6 +309,7 @@ extern "C" void app_main(void) {
     uart_flush_input(BRIDGE_UART);
     if (xSemaphoreTake(s_dev_mutex, portMAX_DELAY) == pdTRUE) {
       s_dev = dev;
+      s_connected = true;
       xSemaphoreGive(s_dev_mutex);
     }
     led_set(LedState::connected);
@@ -284,6 +319,7 @@ extern "C" void app_main(void) {
 
     if (xSemaphoreTake(s_dev_mutex, portMAX_DELAY) == pdTRUE) {
       s_dev = nullptr;
+      s_connected = false;
       xSemaphoreGive(s_dev_mutex);
     }
     delete dev;  // closes the CDC-ACM handle
