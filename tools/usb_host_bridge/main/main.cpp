@@ -52,6 +52,8 @@ static const char *TAG = "bridge";
 #define UART_BUF_SIZE 4096
 #define USB_BUF_SIZE 512
 #define UART_CHUNK 256
+// Never 0: with a 100Hz tick pdMS_TO_TICKS(5) is 0 and the RX loops would spin
+#define RX_POLL_TICKS (pdMS_TO_TICKS(5) > 0 ? pdMS_TO_TICKS(5) : 1)
 
 static SemaphoreHandle_t s_disconnected_sem;
 static SemaphoreHandle_t s_dev_mutex;
@@ -70,7 +72,7 @@ static std::atomic<uint32_t> s_console_bytes{0};
 static void console_rx_task(void *arg) {
   static uint8_t buf[UART_CHUNK];
   while (true) {
-    int len = uart_read_bytes(CONSOLE_UART, buf, sizeof(buf), pdMS_TO_TICKS(5));
+    int len = uart_read_bytes(CONSOLE_UART, buf, sizeof(buf), RX_POLL_TICKS);
     if (len > 0 && !s_connected) {
       uart_write_bytes(BRIDGE_UART, buf, len);
     }
@@ -154,7 +156,7 @@ static void usb_lib_task(void *arg) {
 static void uart_rx_task(void *arg) {
   static uint8_t buf[UART_CHUNK];
   while (true) {
-    int len = uart_read_bytes(BRIDGE_UART, buf, sizeof(buf), pdMS_TO_TICKS(5));
+    int len = uart_read_bytes(BRIDGE_UART, buf, sizeof(buf), RX_POLL_TICKS);
     if (len <= 0) {
       continue;
     }
@@ -250,9 +252,9 @@ extern "C" void app_main(void) {
   VCP::register_driver<CP210x>();
   VCP::register_driver<CH34x>();
 
-  xTaskCreate(uart_rx_task, "uart_rx", 4096, NULL, 9, NULL);
 #ifdef CONFIG_BRIDGE_CONSOLE_PASSTHROUGH
-  ESP_LOGI(TAG, "Bench mode: console port stands in for the printer; logs off");
+  // Install the console driver before any task can write to it
+  ESP_LOGW(TAG, "Bench mode: console port stands in for the printer; logs off");
   vTaskDelay(pdMS_TO_TICKS(20));
   esp_log_level_set("*", ESP_LOG_NONE);
   ESP_ERROR_CHECK(uart_driver_install(CONSOLE_UART, UART_BUF_SIZE,
@@ -261,6 +263,7 @@ extern "C" void app_main(void) {
 #else
   xTaskCreate(stats_task, "stats", 3072, NULL, 1, NULL);
 #endif
+  xTaskCreate(uart_rx_task, "uart_rx", 4096, NULL, 9, NULL);
 
   cdc_acm_line_coding_t line_coding = {
       .dwDTERate = CONFIG_BRIDGE_USB_BAUDRATE,
