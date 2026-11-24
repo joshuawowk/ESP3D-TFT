@@ -42,5 +42,6 @@ enum class ESP3DScreenType : uint8_t {
   access_point,
   manual_leveling,
   auto_leveling,
-  empty
+  empty,
+  babystep
 };

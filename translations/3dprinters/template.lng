@@ -106,6 +106,10 @@ l_102=Never
 l_103=%s min
 l_104=Preheating %s
 l_105=Preset %s
+l_106=Raise
+l_107=Lower
+l_108=Z offset
+l_109=Z offset saved
 
 [info]
 creator=<creator>

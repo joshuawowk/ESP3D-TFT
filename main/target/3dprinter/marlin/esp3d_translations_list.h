@@ -133,6 +133,10 @@ enum class ESP3DLabel : uint16_t {
   minutes_value,
   preheating,
   preheat_preset,
+  caption_raise,
+  caption_lower,
+  caption_z_offset,
+  z_offset_saved,
   unknown_index,  // must be last
 };
 
