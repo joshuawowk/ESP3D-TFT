@@ -34,6 +34,9 @@
 // Z offset (babystepping) button on the main screen while printing
 #define ESP3D_BABYSTEP_SCREEN 1
 
+// Estimated time left next to the elapsed time in the print progress area
+#define ESP3D_PRINT_ETA 1
+
 // Back button size
 #define ESP3D_BACK_BUTTON_WIDTH 80
 #define ESP3D_BACK_BUTTON_HEIGHT 66
@@ -98,5 +101,5 @@
 #define ESP3D_PROGRESSION_AREA_H_PAD 5
 #define ESP3D_PROGRESSION_AREA_V_PAD 3
 #define ESP3D_PROGRESSION_AREA_BORDER_VALUE 1
-#define ESP3D_PROGRESSION_AREA_HEIGHT 50
+#define ESP3D_PROGRESSION_AREA_HEIGHT 64  // file name + progress line, no scrolling
 #define ESP3D_PROGRESSION_AREA_WIDTH (LV_HOR_RES - (2 * 30))

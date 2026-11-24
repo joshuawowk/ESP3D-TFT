@@ -289,6 +289,33 @@ bool speed_value_cb(ESP3DValuesIndex index, const char *value,
  * @param action The action performed on the ESP3D value (e.g., update).
  * @return true if the callback was successfully handled, false otherwise.
  */
+/**
+ * Formats a duration in milliseconds as "[N days ]HH:MM:SS" (or "N ms" below
+ * one second).
+ */
+static std::string format_duration(uint64_t ms) {
+  uint64_t seconds = ms / 1000;
+  if (seconds == 0) {
+    return std::to_string(ms) +
+           esp3dTranslationService.translate(ESP3DLabel::ms);
+  }
+  uint64_t minutes = seconds / 60;
+  seconds %= 60;
+  uint64_t hours = minutes / 60;
+  minutes %= 60;
+  uint64_t days = hours / 24;
+  hours %= 24;
+  std::string str;
+  if (days > 0) {
+    str = std::to_string(days) +
+          esp3dTranslationService.translate(ESP3DLabel::days) + " ";
+  }
+  char hms[16];
+  snprintf(hms, sizeof(hms), "%02u:%02u:%02u", (unsigned)hours,
+           (unsigned)minutes, (unsigned)seconds);
+  return str + hms;
+}
+
 bool job_status_value_cb(ESP3DValuesIndex index, const char *value,
                          ESP3DValuesCbAction action) {
   if (action == ESP3DValuesCbAction::Update) {
@@ -308,55 +335,19 @@ bool job_status_value_cb(ESP3DValuesIndex index, const char *value,
       uint64_t time_elapsed = std::stoull(
           esp3dTftValues.get_string_value(ESP3DValuesIndex::job_duration));
       if (time_elapsed > 0) {
-        int seconds = time_elapsed / 1000;
-        time_elapsed %= 1000;
-
-        int minutes = seconds / 60;
-        seconds %= 60;
-
-        int hours = minutes / 60;
-        minutes %= 60;
-
-        int days = hours / 24;
-        hours %= 24;
-        if (days > 0 || hours > 0 || minutes > 0 || seconds > 0) {
-          if (days > 0) {
-            progression_area_str += std::to_string(days);
-            progression_area_str +=
-                esp3dTranslationService.translate(ESP3DLabel::days);
-            progression_area_str += " ";
-          }
-          if (hours > 0) {
-            if (hours < 10) progression_area_str += "0";
-            progression_area_str += std::to_string(hours);
-            progression_area_str += ":";
-          } else {
-            progression_area_str += "00:";
-          }
-
-          if (minutes > 0) {
-            if (minutes < 10) progression_area_str += "0";
-            progression_area_str += std::to_string(minutes);
-            progression_area_str += ":";
-          } else {
-            progression_area_str += "00:";
-          }
-
-          if (seconds > 0) {
-            if (seconds < 10) progression_area_str += "0";
-            progression_area_str += std::to_string(seconds);
-          } else {
-            progression_area_str += "00";
-          }
-        } else {
-          progression_area_str += std::to_string(time_elapsed);
-          esp3dTranslationService.translate(ESP3DLabel::days);
-          progression_area_str +=
-              esp3dTranslationService.translate(ESP3DLabel::ms);
+        progression_area_str += format_duration(time_elapsed);
+#if ESP3D_PRINT_ETA
+        // Remaining time, estimated from the byte progress (not shown below
+        // 2%: too early to mean anything)
+        double progress = strtod(value, NULL);
+        if (progress >= 2.0 && progress < 100.0 && time_elapsed >= 1000) {
+          uint64_t remaining =
+              (uint64_t)(time_elapsed * (100.0 - progress) / progress);
+          progression_area_str += "  ";
+          progression_area_str += esp3dTranslationService.translate(
+              ESP3DLabel::time_left, format_duration(remaining).c_str());
         }
-
-        esp3d_log("Time elapsed %02dH:%02dMin:%02ds%lld", hours, minutes,
-                  seconds, time_elapsed);
+#endif  // ESP3D_PRINT_ETA
         esp3d_log("%s", progression_area_str.c_str());
       }
     }

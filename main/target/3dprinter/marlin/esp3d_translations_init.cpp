@@ -140,5 +140,6 @@ void ESP3DTranslationService::init() {
       {ESP3DLabel::caption_lower, "Lower"},
       {ESP3DLabel::caption_z_offset, "Z offset"},
       {ESP3DLabel::z_offset_saved, "Z offset saved"},
+      {ESP3DLabel::time_left, "%s left"},
   };
 }

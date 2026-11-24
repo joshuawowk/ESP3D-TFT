@@ -39,6 +39,8 @@ extern "C" {
 struct ESP3DGcodeStream {
   uint64_t id = 0;  // this is currently the time the stream is created in
                     // millis
+  uint64_t startTime = 0;  // millis when a file stream starts printing (queue
+                           // time is not print time)
   uint64_t totalSize =
       0;  // this will correspond to file size or commands line length
   uint64_t processedSize =
