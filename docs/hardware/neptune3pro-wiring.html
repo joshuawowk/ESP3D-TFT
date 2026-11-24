@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ESP3D-TFT on the Neptune 3 Pro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* VOICE: bench build guide, terse and exact, same family as the MonsterC5 proto build page.
+   IDEA: a harness drawing taped above the workbench: every wire pin to pin, colour-coded.
+   PICTURE: the whole chain (printer, USB bridge, display, power) drawn as one schematic strip.
+   COLOUR and TYPE: night panel #0b0f14 with cyan accent; wire colours carry meaning; IBM Plex Sans + Mono.
+   LAYOUT: sticky bar, hero with the chain diagram, numbered sections, harness figure + net list. */
+:root{
+  --bg:#0b0f14; --panel:#131a22; --panel-2:#0f151c; --line:#22303f;
+  --text:#e6edf3; --muted:#8a97a6; --faint:#5a6a79;
+  --accent:#4dd0e1; --accent-soft:rgba(77,208,225,.14);
+  --rf:#f5a623; --rf-soft:rgba(245,166,35,.14);
+  --green:#2ecc71; --green-soft:rgba(46,204,113,.14); --red:#e74c3c;
+  --screen:#07131b;
+  --shadow:0 1px 0 rgba(255,255,255,.02),0 8px 24px rgba(0,0,0,.35);
+  --w-tx:#37b24d; --w-rx:#4a7bd6; --w-gnd:#868e96; --w-5v:#e8590c; --w-usb:#4dd0e1;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#eef1f5; --panel:#ffffff; --panel-2:#f4f7fa; --line:#d5dde5;
+    --text:#14222f; --muted:#566673; --faint:#8a99a6;
+    --accent:#0c7c8f; --accent-soft:rgba(12,124,143,.12);
+    --rf:#b06a00; --rf-soft:rgba(176,106,0,.12);
+    --green:#1e8e4e; --green-soft:rgba(30,142,78,.12); --red:#c0392b;
+    --screen:#0f2230; --w-usb:#0c7c8f;
+    --shadow:0 1px 2px rgba(20,34,47,.06),0 8px 24px rgba(20,34,47,.08);
+  }
+}
+:root[data-theme="light"]{
+  --bg:#eef1f5; --panel:#ffffff; --panel-2:#f4f7fa; --line:#d5dde5;
+  --text:#14222f; --muted:#566673; --faint:#8a99a6;
+  --accent:#0c7c8f; --accent-soft:rgba(12,124,143,.12);
+  --rf:#b06a00; --rf-soft:rgba(176,106,0,.12);
+  --green:#1e8e4e; --green-soft:rgba(30,142,78,.12); --red:#c0392b;
+  --screen:#0f2230; --w-usb:#0c7c8f;
+  --shadow:0 1px 2px rgba(20,34,47,.06),0 8px 24px rgba(20,34,47,.08);
+}
+*{box-sizing:border-box;min-width:0}
+html{scroll-behavior:smooth;scroll-padding-top:64px}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--bg);color:var(--text);font:400 16px/1.6 "IBM Plex Sans",system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:clip}
+.mono{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.bar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:16px;padding:11px 20px;background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.bar .brand{font-family:"IBM Plex Mono",monospace;font-weight:600;letter-spacing:.5px;font-size:15px;white-space:nowrap}
+.bar .brand b{color:var(--accent)}
+.bar .tag{color:var(--muted);font-size:12px;font-family:"IBM Plex Mono",monospace;border-left:1px solid var(--line);padding-left:16px}
+.bar nav{margin-left:auto;display:flex;gap:2px;flex-wrap:wrap}
+.bar nav a{color:var(--muted);text-decoration:none;font-size:13px;padding:5px 9px;border-radius:6px;border:0}
+.bar nav a:hover{color:var(--text);background:var(--accent-soft)}
+.tbtn{background:var(--panel);border:1px solid var(--line);color:var(--muted);border-radius:7px;width:34px;height:30px;cursor:pointer;font-size:14px;display:grid;place-items:center}
+.tbtn:hover{color:var(--text);border-color:var(--accent)}
+a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+@media(max-width:720px){.bar .tag{display:none}.bar nav{margin-left:0;width:100%;order:3}}
+.wrap{max-width:980px;margin:0 auto;padding:0 20px 88px}
+.hero{padding:48px 0 30px;border-bottom:1px solid var(--line)}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:2.5px;text-transform:uppercase;color:var(--accent);margin:0 0 14px}
+.hero h1{font-size:clamp(30px,5.2vw,46px);line-height:1.05;margin:0 0 16px;font-weight:700;letter-spacing:-.5px;text-wrap:balance}
+.hero p{font-size:18px;color:var(--muted);max-width:64ch;margin:0}
+.facts{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}
+.fact{display:flex;flex-direction:column;gap:2px;padding:10px 14px;background:var(--panel);border:1px solid var(--line);border-radius:9px}
+.fact .k{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--faint)}
+.fact .v{font-weight:600;font-size:14px}
+section{padding:44px 0;border-bottom:1px solid var(--line)}
+section:last-of-type{border-bottom:0}
+.sec-h{display:flex;align-items:baseline;gap:14px;margin:0 0 6px}
+.sec-h .num{font-family:"IBM Plex Mono",monospace;color:var(--accent);font-size:14px;font-weight:600}
+h2{font-size:26px;margin:0;font-weight:700;letter-spacing:-.3px;text-wrap:balance}
+.sec-sub{color:var(--muted);margin:0 0 24px;max-width:68ch}
+h3{font-size:16px;margin:26px 0 10px;font-weight:600;letter-spacing:.2px}
+p{max-width:72ch}
+a{color:var(--accent);text-decoration:none;border-bottom:1px solid transparent}
+a:hover{border-bottom-color:currentColor}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media(max-width:720px){.g2,.g3{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow)}
+.card h4{margin:0 0 4px;font-size:15px}
+.card p{margin:0;color:var(--muted);font-size:14px}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;margin:8px 0 4px;background:var(--panel)}
+table{width:100%;border-collapse:collapse;font-size:14px;min-width:560px}
+th,td{padding:10px 16px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);font-weight:500;background:var(--panel-2)}
+tbody tr:last-child td{border-bottom:0}
+td.mono{font-family:"IBM Plex Mono",monospace;font-size:13px;white-space:nowrap}
+td .sig{color:var(--accent);font-weight:600}
+.wsw{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:7px;border:1px solid rgba(0,0,0,.25)}
+.wsw.open{background:transparent;border:1.5px dashed var(--w-5v)}
+.note{display:flex;gap:12px;padding:14px 16px;border-radius:11px;margin:16px 0;border:1px solid var(--line);background:var(--panel)}
+.note .ic{font-family:"IBM Plex Mono",monospace;font-weight:600;flex:none;width:20px;text-align:center}
+.note p{margin:0;font-size:14px;color:var(--muted);max-width:none}
+.note p+p{margin-top:8px}
+.note.warn{border-color:color-mix(in srgb,var(--rf) 55%,var(--line));background:var(--rf-soft)}
+.note.warn .ic{color:var(--rf)}
+.note.stop{border-color:color-mix(in srgb,var(--red) 55%,var(--line));background:color-mix(in srgb,var(--red) 10%,transparent)}
+.note.stop .ic{color:var(--red)}
+.note.info .ic{color:var(--accent)}
+.note.ok{border-color:color-mix(in srgb,var(--green) 50%,var(--line));background:var(--green-soft)}
+.note.ok .ic{color:var(--green)}
+.note b{color:var(--text)}
+.codehead{display:flex;align-items:center;justify-content:space-between;margin:14px 0 -6px}
+.codehead span{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--faint)}
+.copy{font:500 12px "IBM Plex Mono",monospace;color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:0 12px;min-height:32px;cursor:pointer}
+.copy:hover{color:var(--text);border-color:var(--accent)}
+.code{background:#0c1117;border:1px solid #1d2732;border-radius:11px;padding:14px 16px;margin:12px 0;overflow-x:auto;font-family:"IBM Plex Mono",monospace;font-size:13px;line-height:1.7;color:#cdd9e3;white-space:pre}
+.code .c{color:#5f7285}
+.steps{display:grid;gap:14px;margin-top:8px}
+.step{display:grid;grid-template-columns:40px minmax(0,1fr);gap:16px;align-items:start}
+.step .n{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:15px;color:var(--accent);border:1px solid var(--line);border-radius:9px;height:40px;display:grid;place-items:center;background:var(--panel)}
+.step .b h3{margin:6px 0 6px}.step .b p{margin:0 0 8px;color:var(--muted);font-size:14.5px}
+figure{margin:8px 0 6px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 18px 12px;box-shadow:var(--shadow)}
+.figscroll{overflow-x:auto}
+.figscroll svg{display:block;width:100%;height:auto;min-width:660px}
+figcaption{color:var(--muted);font-size:13px;margin-top:10px;text-align:center;max-width:none}
+figcaption b{color:var(--text)}
+.legend{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:12px}
+.lg{display:inline-flex;align-items:center;gap:6px;font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:20px;padding:3px 9px;background:var(--panel-2)}
+.lg .wire{width:16px;height:3px;border-radius:2px}
+.lg .wire.dash{background:repeating-linear-gradient(90deg,var(--w-5v) 0 4px,transparent 4px 7px)}
+.d-t{fill:var(--text);font:600 13px "IBM Plex Sans",sans-serif}
+.d-s{fill:var(--muted);font:11px "IBM Plex Mono",monospace}
+.d-xs{fill:var(--muted);font:9.5px "IBM Plex Mono",monospace}
+.d-red{fill:var(--red);font:600 9.5px "IBM Plex Mono",monospace}
+.d-acc{fill:var(--accent);font:600 10px "IBM Plex Mono",monospace}
+.board{fill:var(--panel-2);stroke:var(--line);stroke-width:1.5}
+.chip{fill:var(--panel);stroke:var(--line);stroke-width:1.5}
+.port{fill:var(--panel);stroke:var(--text);stroke-width:1.3}
+.pad-t{fill:var(--text);font:600 12px "IBM Plex Mono",monospace}
+.term{fill:var(--panel);stroke:var(--text);stroke-width:1.5}
+.lead{fill:none;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.scr{fill:var(--screen);stroke:var(--line);stroke-width:1.5}
+.ui{fill:color-mix(in srgb,var(--accent) 26%,transparent);stroke:color-mix(in srgb,var(--accent) 55%,transparent);stroke-width:1}
+.flow{stroke-dasharray:6 10;animation:flow 1.6s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-32}}
+@media (prefers-reduced-motion:reduce){.flow{animation:none;stroke-dasharray:none}}
+ul.tight{margin:6px 0;padding-left:20px}
+ul.tight li{margin:4px 0;color:var(--muted);font-size:14.5px}
+ul.tight li b{color:var(--text)}
+footer{color:var(--muted);font-size:13px;padding:28px 0 0;text-align:center}
+footer .mono{color:var(--faint);font-size:12px}
+@media(max-width:600px){.stack thead{display:none}.stack table{min-width:0}.stack tr{display:grid;padding-block:10px;border-bottom:1px solid var(--line)}.stack td{display:flow-root;border:0;padding:3px 14px;padding-inline-start:8.6em;white-space:normal}.stack td::before{content:attr(data-l);float:inline-start;width:7.6em;margin-inline-start:-8em;color:var(--faint);font:11px "IBM Plex Mono",monospace;padding-top:2px}.stack td:empty{display:none}}
+</style>
+<script>new MutationObserver(()=>{for(const c of document.querySelectorAll('.stack td:not([data-l])')){let i=0,p=c;while(p=p.previousElementSibling)i+=p.colSpan;c.dataset.l=c.closest('table').rows[0].cells[i]?.textContent||''}}).observe(document,{childList:true,subtree:true})</script>
+</head>
+<body>
+
+<div class="bar">
+  <span class="brand">ESP3D<b>-TFT</b> × N3P</span>
+  <span class="tag">Guition 4848S040 · USB host bridge</span>
+  <nav>
+    <a href="#overview">Overview</a>
+    <a href="#parts">Parts</a>
+    <a href="#wiring">Wiring</a>
+    <a href="#power">Power</a>
+    <a href="#flash">Flash</a>
+    <a href="#checks">Checks</a>
+    <a href="#fixes">Fixes</a>
+  </nav>
+  <button class="tbtn" id="themeBtn" aria-label="Toggle light/dark theme" title="Toggle theme">◐</button>
+</div>
+
+<div class="wrap">
+
+<header class="hero" id="overview">
+  <p class="eyebrow">ESP32-S3 · ESP3D-TFT · stock Marlin · USB-B</p>
+  <h1>Wire the ESP3D-TFT touchscreen to the Neptune 3 Pro</h1>
+  <p>The Guition ESP32-S3-4848S040 runs ESP3D-TFT but cannot be a USB host: its USB pins drive the touch controller and the RGB bus. The Neptune 3 Pro only takes G-code on its USB-B port. A spare <b>ESP32-S3-DevKitC-1</b> sits between them as a USB-host bridge. The printer keeps its stock firmware and its stock screen.</p>
+  <div class="facts">
+    <div class="fact"><span class="k">Printer link</span><span class="v">USB-B → bridge · 115200</span></div>
+    <div class="fact"><span class="k">Display link</span><span class="v">UART · 3 wires to P1</span></div>
+    <div class="fact"><span class="k">Printer firmware</span><span class="v">Stock, no changes</span></div>
+    <div class="fact"><span class="k">Power</span><span class="v">Two 5V USB supplies</span></div>
+  </div>
+
+  <figure style="margin-top:28px">
+    <div class="figscroll">
+    <svg viewBox="0 0 960 370" role="img" aria-label="System diagram. The Neptune 3 Pro mainboard's STM32F401 talks on USART1 to a CH340G that drives the printer's USB-B port. A USB cable with an OTG adapter goes to the DevKitC-1 native USB port in host mode. The DevKitC-1 GPIO17 and GPIO18 and GND go to the display's P1 RX, TX and GND. Each board has its own 5V USB supply. The CH340G DTR line reaches the STM32 reset through C33, so the bridge never toggles it.">
+      <!-- printer -->
+      <rect class="board" x="20" y="40" width="270" height="236" rx="10"/>
+      <text class="d-t" x="155" y="66" text-anchor="middle">Elegoo Neptune 3 Pro</text>
+      <text class="d-s" x="155" y="84" text-anchor="middle">ZNP Robin Nano_DW V2.2</text>
+      <rect class="chip" x="36" y="108" width="106" height="48" rx="6"/>
+      <text class="pad-t" x="89" y="136" text-anchor="middle">STM32F401</text>
+      <rect class="chip" x="178" y="108" width="84" height="48" rx="6"/>
+      <text class="pad-t" x="220" y="136" text-anchor="middle">CH340G</text>
+      <path class="lead" style="stroke:var(--muted);stroke-width:1.6" d="M142 124 H178 M142 140 H178"/>
+      <text class="d-xs" x="160" y="101" text-anchor="middle">USART1</text>
+      <path class="lead" style="stroke:var(--muted);stroke-width:1.6" d="M262 132 H280"/>
+      <rect class="port" x="280" y="116" width="22" height="32" rx="3"/>
+      <text class="d-xs" x="270" y="172" text-anchor="middle">USB-B</text>
+      <path class="lead" style="stroke:var(--red);stroke-width:1.6;stroke-dasharray:4 3" d="M220 156 V190 H89 V156"/>
+      <text class="d-red" x="155" y="208" text-anchor="middle">DTR → C33 → RESET</text>
+      <text class="d-xs" x="155" y="222" text-anchor="middle">the bridge never toggles DTR</text>
+      <text class="d-xs" x="155" y="248" text-anchor="middle">stock TJC screen keeps working</text>
+      <text class="d-xs" x="155" y="262" text-anchor="middle">printer PSU powers its CH340G</text>
+
+      <!-- USB cable -->
+      <path class="lead" style="stroke:var(--w-usb);stroke-width:6" d="M302 132 H392"/>
+      <path class="lead flow" style="stroke:var(--bg);stroke-width:2" d="M304 132 H390"/>
+      <text class="d-xs" x="347" y="118" text-anchor="middle">USB cable</text>
+      <text class="d-xs" x="345" y="166" text-anchor="middle">+ OTG adapter</text>
+
+      <!-- bridge -->
+      <rect class="board" x="392" y="60" width="220" height="190" rx="10"/>
+      <text class="d-t" x="498" y="86" text-anchor="middle">ESP32-S3-DevKitC-1</text>
+      <text class="d-s" x="498" y="104" text-anchor="middle">usb_host_bridge</text>
+      <circle cx="590" cy="80" r="6" fill="var(--green)"/>
+      <text class="d-xs" x="590" y="100" text-anchor="middle">LED</text>
+      <rect class="port" x="380" y="116" width="22" height="32" rx="3"/>
+      <text class="pad-t" x="412" y="129">USB</text>
+      <text class="d-xs" x="412" y="143">host · G19/G20</text>
+      <circle class="term" cx="612" cy="150" r="5" style="stroke:var(--w-tx)"/>
+      <text class="pad-t" x="600" y="154" text-anchor="end">G17 <tspan class="d-xs">TX</tspan></text>
+      <circle class="term" cx="612" cy="180" r="5" style="stroke:var(--w-rx)"/>
+      <text class="pad-t" x="600" y="184" text-anchor="end">G18 <tspan class="d-xs">RX</tspan></text>
+      <circle class="term" cx="612" cy="210" r="5" style="stroke:var(--w-gnd)"/>
+      <text class="pad-t" x="600" y="214" text-anchor="end">GND</text>
+      <rect class="port" x="482" y="242" width="40" height="16" rx="3"/>
+      <text class="d-xs" x="530" y="286">UART port</text>
+      <text class="d-xs" x="530" y="300">5V in · console</text>
+
+      <!-- UART wires -->
+      <text class="d-xs" x="667" y="134" text-anchor="middle">UART · 115200</text>
+      <path class="lead" style="stroke:var(--w-tx)" d="M617 150 H717"/>
+      <path class="lead" style="stroke:var(--w-rx)" d="M617 180 H717"/>
+      <path class="lead" style="stroke:var(--w-gnd)" d="M617 210 H717"/>
+
+      <!-- display -->
+      <rect class="board" x="722" y="40" width="218" height="236" rx="10"/>
+      <text class="d-t" x="831" y="66" text-anchor="middle">Guition 4848S040</text>
+      <text class="d-s" x="831" y="84" text-anchor="middle">ESP3D-TFT · 480×480</text>
+      <text class="d-acc" x="734" y="128">P1</text>
+      <circle class="term" cx="722" cy="150" r="5" style="stroke:var(--w-tx)"/>
+      <text class="pad-t" x="734" y="154">RX <tspan class="d-xs">G44</tspan></text>
+      <circle class="term" cx="722" cy="180" r="5" style="stroke:var(--w-rx)"/>
+      <text class="pad-t" x="734" y="184">TX <tspan class="d-xs">G43</tspan></text>
+      <circle class="term" cx="722" cy="210" r="5" style="stroke:var(--w-gnd)"/>
+      <text class="pad-t" x="734" y="214">GND</text>
+      <circle class="term" cx="722" cy="240" r="5" style="stroke:var(--w-5v);stroke-dasharray:2 2"/>
+      <text class="pad-t" x="734" y="244">+5V <tspan class="d-xs">open</tspan></text>
+      <rect class="scr" x="824" y="104" width="100" height="100" rx="9"/>
+      <rect class="ui" x="834" y="114" width="80" height="16" rx="4"/>
+      <rect class="ui" x="834" y="138" width="36" height="26" rx="5"/>
+      <rect class="ui" x="878" y="138" width="36" height="26" rx="5"/>
+      <rect class="ui" x="834" y="170" width="36" height="26" rx="5"/>
+      <rect class="ui" x="878" y="170" width="36" height="26" rx="5"/>
+      <rect class="port" x="812" y="268" width="36" height="14" rx="3"/>
+      <text class="d-xs" x="856" y="300">USB-C</text>
+      <text class="d-xs" x="856" y="314">5V in</text>
+
+      <!-- supplies -->
+      <path class="lead" style="stroke:var(--w-5v)" d="M502 326 V258"/>
+      <rect class="chip" x="452" y="326" width="100" height="34" rx="7"/>
+      <text class="pad-t" x="502" y="348" text-anchor="middle">5V USB</text>
+      <path class="lead" style="stroke:var(--w-5v)" d="M830 326 V282"/>
+      <rect class="chip" x="780" y="326" width="100" height="34" rx="7"/>
+      <text class="pad-t" x="830" y="348" text-anchor="middle">5V USB · 1A+</text>
+    </svg>
+    </div>
+    <figcaption>The whole chain. G-code leaves the display on <b>UART0</b>, crosses three wires to the bridge, and goes out the bridge's native USB port to the printer's CH340G. Replies come back the same way.</figcaption>
+    <div class="legend">
+      <span class="lg"><span class="wire" style="background:var(--w-usb)"></span>USB data</span>
+      <span class="lg"><span class="wire" style="background:var(--w-tx)"></span>bridge TX → display RX</span>
+      <span class="lg"><span class="wire" style="background:var(--w-rx)"></span>bridge RX ← display TX</span>
+      <span class="lg"><span class="wire" style="background:var(--w-gnd)"></span>GND</span>
+      <span class="lg"><span class="wire" style="background:var(--w-5v)"></span>5V power</span>
+    </div>
+  </figure>
+</header>
+
+<section id="parts">
+  <div class="sec-h"><span class="num">01</span><h2>Parts</h2></div>
+  <p class="sec-sub">Everything is off the shelf. No soldering on any board.</p>
+  <div class="grid g3">
+    <div class="card"><h4>Guition ESP32-S3-4848S040</h4><p>4.0" 480×480 touch panel, 16 MB flash, 8 MB PSRAM. Runs ESP3D-TFT (target <span class="mono">ESP32S3_4848S040C</span>).</p></div>
+    <div class="card"><h4>ESP32-S3-DevKitC-1</h4><p>Any S3 DevKitC with both a <b>USB</b> and a <b>UART</b> port. Runs <span class="mono">tools/usb_host_bridge</span>.</p></div>
+    <div class="card"><h4>USB A-to-B printer cable</h4><p>The printer's USB-B port to the bridge.</p></div>
+    <div class="card"><h4>USB OTG adapter</h4><p>USB-A female to the DevKitC's connector (USB-C or micro-USB, depending on board revision).</p></div>
+    <div class="card"><h4>P1 pigtail + 3 jumpers</h4><p>4-pin 1.25 mm cable (usually in the display's box) and three Dupont leads to the DevKitC header.</p></div>
+    <div class="card"><h4>Two 5V USB supplies</h4><p>One for the display (1 A or more, it drives the backlight), one for the bridge.</p></div>
+  </div>
+</section>
+
+<section id="wiring">
+  <div class="sec-h"><span class="num">02</span><h2>Wiring: where every wire goes</h2></div>
+  <p class="sec-sub">One harness of three wires between the bridge and the display, then one USB cable to the printer. TX goes to RX and RX goes to TX; the grounds are joined.</p>
+
+  <h3>Harness A: the bridge to the display (3 wires)</h3>
+  <figure>
+    <div class="figscroll">
+    <svg viewBox="0 0 760 300" role="img" aria-label="Harness diagram. DevKitC-1 GND on J1 pin 22 goes to display P1 GND. DevKitC-1 GPIO17, UART1 TX on J1 pin 10, goes to P1 RX, GPIO44. DevKitC-1 GPIO18, UART1 RX on J1 pin 11, goes to P1 TX, GPIO43. P1 plus 5V is left unconnected.">
+      <rect class="board" x="40" y="70" width="180" height="170" rx="8"/>
+      <text class="d-t" x="130" y="96" text-anchor="middle">ESP32-S3-DevKitC-1</text>
+      <text class="d-s" x="130" y="112" text-anchor="middle">bridge · UART1</text>
+      <circle class="term" cx="220" cy="140" r="5" style="stroke:var(--w-gnd)"/>
+      <text class="pad-t" x="208" y="144" text-anchor="end">GND<tspan class="d-xs" dx="3">J1-22</tspan></text>
+      <circle class="term" cx="220" cy="175" r="5" style="stroke:var(--w-tx)"/>
+      <text class="pad-t" x="208" y="179" text-anchor="end">G17<tspan class="d-xs" dx="3">TX · J1-10</tspan></text>
+      <circle class="term" cx="220" cy="210" r="5" style="stroke:var(--w-rx)"/>
+      <text class="pad-t" x="208" y="214" text-anchor="end">G18<tspan class="d-xs" dx="3">RX · J1-11</tspan></text>
+
+      <rect class="board" x="540" y="50" width="190" height="220" rx="8"/>
+      <text class="d-t" x="635" y="38" text-anchor="middle">Display P1 (4-pin, 1.25 mm)</text>
+      <circle class="term" cx="580" cy="90" r="5" style="stroke:var(--w-gnd)"/>
+      <text class="pad-t" x="592" y="94">GND</text>
+      <circle class="term" cx="580" cy="140" r="5" style="stroke:var(--w-tx)"/>
+      <text class="pad-t" x="592" y="144">RX <tspan class="d-xs">GPIO44</tspan></text>
+      <circle class="term" cx="580" cy="190" r="5" style="stroke:var(--w-rx)"/>
+      <text class="pad-t" x="592" y="194">TX <tspan class="d-xs">GPIO43</tspan></text>
+      <circle class="term" cx="580" cy="240" r="5" style="stroke:var(--w-5v);stroke-dasharray:2 2"/>
+      <text class="pad-t" x="592" y="244">+5V <tspan class="d-xs">leave open</tspan></text>
+
+      <path class="lead" style="stroke:var(--w-gnd)" d="M225 140 C 380 140, 420 90, 575 90"/>
+      <path class="lead" style="stroke:var(--w-tx)" d="M225 175 C 380 175, 420 140, 575 140"/>
+      <path class="lead" style="stroke:var(--w-rx)" d="M225 210 C 380 210, 420 190, 575 190"/>
+      <text class="d-xs" x="380" y="262" text-anchor="middle">TX → RX · RX ← TX · common GND · P1 +5V stays open</text>
+    </svg>
+    </div>
+    <figcaption><b>G17 (TX) → P1 RX</b> and <b>G18 (RX) ← P1 TX</b>, GND to GND. P1 is labelled <span class="mono">GND RX TX +5V</span> on the silkscreen; check yours. Header H1 carries the same RX/TX/GND if that is easier to reach.</figcaption>
+    <div class="legend">
+      <span class="lg"><span class="wire" style="background:var(--w-gnd)"></span>GND</span>
+      <span class="lg"><span class="wire" style="background:var(--w-tx)"></span>bridge TX → display RX</span>
+      <span class="lg"><span class="wire" style="background:var(--w-rx)"></span>bridge RX ← display TX</span>
+      <span class="lg"><span class="wire dash"></span>+5V not connected</span>
+    </div>
+  </figure>
+
+  <h3>Net list</h3>
+  <div class="tbl-wrap stack">
+    <table>
+      <thead><tr><th>Wire</th><th>From</th><th>To</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td><span class="wsw" style="background:var(--w-tx)"></span>green</td><td class="mono">DevKitC J1-10 · GPIO17</td><td class="mono">P1 RX · GPIO44</td><td>Bridge UART1 TX: printer replies to the display</td></tr>
+        <tr><td><span class="wsw" style="background:var(--w-rx)"></span>blue</td><td class="mono">DevKitC J1-11 · GPIO18</td><td class="mono">P1 TX · GPIO43</td><td>Bridge UART1 RX: G-code from the display</td></tr>
+        <tr><td><span class="wsw" style="background:var(--w-gnd)"></span>grey</td><td class="mono">DevKitC J1-22 · GND</td><td class="mono">P1 GND</td><td>Common reference; any G pin works</td></tr>
+        <tr><td><span class="wsw open"></span>none</td><td class="mono">—</td><td class="mono">P1 +5V</td><td>Leave open: the display runs from its USB-C</td></tr>
+        <tr><td><span class="wsw" style="background:var(--w-usb)"></span>USB</td><td class="mono">DevKitC "USB" port</td><td class="mono">Neptune USB-B</td><td>Through the OTG adapter; the bridge is the USB host</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note warn"><span class="ic">!</span><div><p><b>The DevKitC has two USB ports.</b> The printer goes in the one marked <b>USB</b> (native ESP32-S3, GPIO19/20). The one marked <b>UART</b> (or COM) is power and the bridge's log console. Swapped, nothing enumerates and the LED stays blue.</p></div></div>
+</section>
+
+<section id="power">
+  <div class="sec-h"><span class="num">03</span><h2>Power: who feeds what</h2></div>
+  <p class="sec-sub">Each board runs from its own USB supply. Nothing on the data path carries power.</p>
+  <div class="tbl-wrap stack">
+    <table>
+      <thead><tr><th>Board</th><th>Powered from</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Display</td><td class="mono">USB-C, 5V ≥ 1 A</td><td>The P1 +5V input has no bulk capacitance and causes resets. Never power USB-C and P1 together: they back-feed.</td></tr>
+        <tr><td>Bridge</td><td class="mono">"UART" USB port</td><td>Any 5V USB supply or a PC (then you also get the log console).</td></tr>
+        <tr><td>Printer CH340G</td><td class="mono">Printer 3V3 rail</td><td>The bridge does not need to supply USB VBUS. The bridge connects when the printer powers on.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note stop"><span class="ic">✕</span><div><p><b>Do not let anything toggle DTR.</b> On the Neptune 3 Pro mainboard the CH340G's DTR reaches the STM32 reset through C33. A PC opening the port, or a host that sets DTR, resets the printer and kills a running print. The bridge leaves DTR and RTS alone (<span class="mono">CONFIG_BRIDGE_ASSERT_DTR</span> is off).</p></div></div>
+</section>
+
+<section id="flash">
+  <div class="sec-h"><span class="num">04</span><h2>Flash both boards</h2></div>
+  <p class="sec-sub">From the repo (<span class="mono">joshuawowk/ESP3D-TFT</span>), ESP-IDF 5.1.5. Flash the display <b>before</b> wiring P1, or unplug P1 to reflash: the bridge's TX shares the display's RX line with its CH340.</p>
+  <div class="codehead"><span>display · ESP3D-TFT</span><button class="copy" data-for="c1">Copy</button></div>
+  <div class="code" id="c1">idf.py -DESP32S3_HMI43V3=OFF -DESP32S3_4848S040C=ON set-target esp32s3
+idf.py build
+idf.py -p /dev/ttyUSB0 -b 460800 flash   <span class="c"># 921600 corrupts on the CH340</span></div>
+  <div class="codehead"><span>bridge · tools/usb_host_bridge</span><button class="copy" data-for="c2">Copy</button></div>
+  <div class="code" id="c2">cd tools/usb_host_bridge
+idf.py set-target esp32s3
+idf.py build
+idf.py -p /dev/ttyUSB1 flash monitor   <span class="c"># through the DevKitC "UART" port</span></div>
+  <p style="color:var(--muted);font-size:14.5px">Once running, the bridge's native USB port is in host mode and no longer shows up on a PC. Hold BOOT and tap RESET to flash through it again.</p>
+  <div class="codehead"><span>restore the display's factory firmware</span><button class="copy" data-for="c3">Copy</button></div>
+  <div class="code" id="c3">esptool.py --chip esp32s3 -p /dev/ttyUSB0 -b 460800 write_flash 0x0 factory-backup.bin</div>
+</section>
+
+<section id="checks">
+  <div class="sec-h"><span class="num">05</span><h2>Bring-up checks</h2></div>
+  <p class="sec-sub">In order. Each step proves one link before the next depends on it.</p>
+  <div class="steps">
+    <div class="step"><div class="n">1</div><div class="b"><h3>Display alone</h3><p>Splash, then the main screen, upright, correct colours, taps land under your finger. Without a printer the temperatures stay empty.</p></div></div>
+    <div class="step"><div class="n">2</div><div class="b"><h3>Bridge LED blue</h3><p>Powered, waiting for a USB device. On a v1.0 DevKitC the LED is on GPIO48 and stays dark; set <span class="mono">BRIDGE_LED_GPIO=48</span>.</p></div></div>
+    <div class="step"><div class="n">3</div><div class="b"><h3>Printer on, LED green</h3><p>The CH340G enumerated and the bridge opened it at 115200 8N1. The console shows <span class="mono">Printer USB device opened</span> then <span class="mono">Bridge active</span>.</p></div></div>
+    <div class="step"><div class="n">4</div><div class="b"><h3>Temperatures on the display</h3><p>ESP3D-TFT polls with <span class="mono">M105</span>/<span class="mono">M114</span>; hotend and bed readings appear. Every 10 s the bridge logs byte counts in both directions.</p></div></div>
+  </div>
+  <div class="codehead"><span>bridge console (UART port, 115200)</span><button class="copy" data-for="c4">Copy</button></div>
+  <div class="code" id="c4">I (312) bridge: ESP3D-TFT USB host bridge: UART1 TX=GPIO17 RX=GPIO18 @115200, USB @115200, DTR untouched
+I (322) bridge: Waiting for the printer USB device...
+I (2841) bridge: Printer USB device opened
+I (2851) bridge: Bridge active
+I (12322) bridge: printer->tft 1284 B, tft->printer 96 B, dropped (no printer) 0 B</div>
+  <p style="color:var(--faint);font-size:13px">Sample log; timestamps and byte counts vary.</p>
+</section>
+
+<section id="fixes">
+  <div class="sec-h"><span class="num">06</span><h2>Fixes</h2></div>
+  <div class="tbl-wrap stack">
+    <table>
+      <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td>LED stays blue</td><td>Printer off, cable in the "UART" port, or no OTG adapter</td><td>Printer on; cable in the port marked USB; use an OTG adapter, not a plain A-to-C cable</td></tr>
+        <tr><td>LED green, no temperatures</td><td>TX/RX swapped or GND missing</td><td>Swap G17/G18 at the header; add the ground wire</td></tr>
+        <tr><td>Garbled or partial replies</td><td>Baud mismatch</td><td>Display: <span class="mono">[ESP901]115200</span>; bridge and printer are fixed at 115200</td></tr>
+        <tr><td>Display reboots</td><td>Weak supply or P1 +5V connected</td><td>1 A+ supply on USB-C; disconnect P1 +5V</td></tr>
+        <tr><td>Printer resets on connect</td><td>Something asserted DTR</td><td>Keep <span class="mono">BRIDGE_ASSERT_DTR</span> off; close any PC terminal on the printer's port</td></tr>
+        <tr><td>Display flashing fails</td><td>Bridge TX drives the display RX</td><td>Unplug P1, flash, plug back in</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<footer>
+  <p>Firmware and these notes live in <a href="https://github.com/joshuawowk/ESP3D-TFT">joshuawowk/ESP3D-TFT</a>: <span class="mono">hardware/ESP32S3_4848S040C</span>, <span class="mono">tools/usb_host_bridge</span>, <span class="mono">docs/hardware</span>.</p>
+  <p class="mono">Printer facts from Elegoo's published ZNP Robin Nano_DW V2.2 schematic and Marlin 2.1.1 source.</p>
+</footer>
+</div>
+
+<script>
+{
+  const root=document.documentElement, btn=document.getElementById('themeBtn');
+  const cur=()=>{let t=null;try{t=localStorage.getItem('esp3d-n3p-theme')}catch(e){}if(t)return t;return matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'};
+  const apply=t=>{root.setAttribute('data-theme',t);btn.textContent=t==='light'?'☀':'☾'};
+  apply(cur());
+  btn.addEventListener('click',()=>{const next=root.getAttribute('data-theme')==='light'?'dark':'light';apply(next);try{localStorage.setItem('esp3d-n3p-theme',next)}catch(e){}});
+  for(const b of document.querySelectorAll('.copy')){
+    b.addEventListener('click',()=>{
+      const el=document.getElementById(b.dataset.for);
+      const text=[...el.childNodes].filter(n=>!(n.nodeType===1&&n.classList.contains('c'))).map(n=>n.textContent).join('').replace(/[ \t]+$/gm,'');
+      navigator.clipboard.writeText(text).then(()=>{b.textContent='Copied';setTimeout(()=>b.textContent='Copy',1500)},()=>{b.textContent='Select + copy';setTimeout(()=>b.textContent='Copy',2000)});
+    });
+  }
+}
+</script>
+</body>
+</html>

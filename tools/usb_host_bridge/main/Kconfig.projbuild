@@ -1,0 +1,58 @@
+menu "USB host bridge"
+
+    config BRIDGE_UART_NUM
+        int "UART port connected to the ESP3D-TFT display"
+        range 1 2
+        default 1
+
+    config BRIDGE_UART_TX_GPIO
+        int "UART TX GPIO (to display RX)"
+        default 17
+
+    config BRIDGE_UART_RX_GPIO
+        int "UART RX GPIO (from display TX)"
+        default 18
+
+    config BRIDGE_UART_BAUDRATE
+        int "UART baud rate (must match the ESP3D-TFT serial baud rate)"
+        default 115200
+
+    config BRIDGE_USB_BAUDRATE
+        int "USB serial baud rate (must match the printer firmware BAUDRATE)"
+        default 115200
+
+    config BRIDGE_ASSERT_DTR
+        bool "Assert DTR/RTS after opening the USB device"
+        default n
+        help
+            Most printer boards with a CH340/CP210x/FTDI bridge wire DTR to
+            the MCU reset through a capacitor (Arduino-style auto reset), so
+            changing DTR resets the printer, which would abort a running
+            print. Leave this off unless your printer needs DTR asserted to
+            send data.
+
+    config BRIDGE_LED_GPIO
+        int "WS2812 status LED GPIO (-1 to disable)"
+        default 38
+        help
+            ESP32-S3-DevKitC-1 v1.1 uses GPIO38, v1.0 uses GPIO48.
+            Blue: waiting for the printer USB device. Green: connected.
+
+    config BRIDGE_CONSOLE_PASSTHROUGH
+        bool "Bench mode: stand in for the printer on the console port"
+        default n
+        help
+            While no printer USB device is connected, pass the display UART
+            straight through to the console UART (the DevKit "UART" port), so
+            a PC can play the printer, e.g. with tools/fw_simulator. Logging
+            is silenced after start-up so it does not mix with the G-code.
+
+    config BRIDGE_LOG_TRAFFIC
+        bool "Log all bridged traffic on the console"
+        depends on !BRIDGE_CONSOLE_PASSTHROUGH
+        default n
+        help
+            Only for bring-up. The console (UART0) is slower than the bridged
+            traffic, so heavy logging can throttle the bridge.
+
+endmenu

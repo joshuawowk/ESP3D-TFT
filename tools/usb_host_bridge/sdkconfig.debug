@@ -1,0 +1,2 @@
+# Extra defaults for a bring-up build: log all bridged traffic
+CONFIG_BRIDGE_LOG_TRAFFIC=y

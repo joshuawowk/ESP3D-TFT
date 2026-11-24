@@ -1,0 +1,4 @@
+# Bench build: no printer needed, a PC on the "UART" port plays the printer
+CONFIG_BRIDGE_CONSOLE_PASSTHROUGH=y
+CONFIG_BOOTLOADER_LOG_LEVEL_NONE=y
+CONFIG_LOG_DEFAULT_LEVEL_WARN=y
