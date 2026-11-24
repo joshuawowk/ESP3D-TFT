@@ -21,7 +21,13 @@
 #pragma once
 #include <stdio.h>
 
+#include "lvgl.h"
 #include "screens/esp3d_screen_type.h"
+
+#if LV_USE_SNAPSHOT && ESP3D_HTTP_FEATURE
+// Remote screen: GET /snapshot (screen capture) and GET /touch (tap)
+#define ESP3D_REMOTE_TOUCH_FEATURE 1
+#endif  // LV_USE_SNAPSHOT && ESP3D_HTTP_FEATURE
 
 class ESP3DTftUi final {
  public:
@@ -35,6 +41,11 @@ class ESP3DTftUi final {
   // Lock/unlock LVGL for calls made outside the UI task
   bool lockGui(uint32_t timeout_ms);
   void unlockGui();
+#if ESP3D_REMOTE_TOUCH_FEATURE
+  // Press the screen at (x, y) for duration_ms through a virtual pointer
+  // device, then wait until LVGL has read the release.
+  bool remoteTouch(int32_t x, int32_t y, uint32_t duration_ms);
+#endif  // ESP3D_REMOTE_TOUCH_FEATURE
 
  private:
   ESP3DScreenType _current_screen = ESP3DScreenType::none;
