@@ -32,6 +32,13 @@
 #include "webdav/esp3d_webdav_service.h"
 #endif  // ESP3D_WEBDAV_SERVICES_FEATURE
 #include "tasks_def.h"
+#if ESP3D_DISPLAY_FEATURE
+#include "lvgl.h"
+#if LV_USE_SNAPSHOT
+// GET /snapshot returns the current screen as a BMP image
+#define ESP3D_SCREEN_SNAPSHOT_FEATURE 1
+#endif  // LV_USE_SNAPSHOT
+#endif  // ESP3D_DISPLAY_FEATURE
 
 #define CHUNK_BUFFER_SIZE STREAM_CHUNK_SIZE
 
@@ -126,6 +133,9 @@ class ESP3DHttpService final {
 #if ESP3D_CAMERA_FEATURE
   static esp_err_t snap_handler(httpd_req_t *req);
 #endif  // ESP3D_CAMERA_FEATURE
+#if ESP3D_SCREEN_SNAPSHOT_FEATURE
+  static esp_err_t screen_snapshot_handler(httpd_req_t *req);
+#endif  // ESP3D_SCREEN_SNAPSHOT_FEATURE
 #if ESP3D_SD_CARD_FEATURE
   static esp_err_t sdfiles_handler(httpd_req_t *req);
   static esp_err_t upload_to_sd_handler(const uint8_t *data, size_t datasize,
