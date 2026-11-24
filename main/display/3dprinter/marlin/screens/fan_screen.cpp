@@ -577,6 +577,7 @@ void create() {
   }
   lv_obj_align_to(btn_ok, label_unit2, LV_ALIGN_OUT_RIGHT_MID,
                   ESP3D_BUTTON_PRESSED_OUTLINE, 0);
+  ESP3D_SET_CAPTION(btn_ok, caption_apply);
   lv_obj_add_event_cb(btn_ok, fan_btn_ok_event_cb, LV_EVENT_CLICKED, fan_ta);
 
   // Button Reset
@@ -587,6 +588,7 @@ void create() {
   }
   lv_obj_align_to(btn_reset, btn_ok, LV_ALIGN_OUT_RIGHT_MID,
                   ESP3D_BUTTON_PRESSED_OUTLINE, 0);
+  ESP3D_SET_CAPTION(btn_reset, caption_off);
   lv_obj_add_event_cb(btn_reset, fan_btn_reset_event_cb, LV_EVENT_CLICKED,
                       fan_ta);
 

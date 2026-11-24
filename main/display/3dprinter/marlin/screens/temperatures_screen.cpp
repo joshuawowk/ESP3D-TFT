@@ -640,8 +640,8 @@ void create(uint8_t target, ESP3DScreenType screenreturn) {
 
   // Power off all heater
   lv_obj_t *btn_power_off_all = symbolButton::create(
-      ui_new_screen, LV_SYMBOL_POWER "...", ESP3D_MATRIX_BUTTON_WIDTH,
-      ESP3D_MATRIX_BUTTON_HEIGHT);
+      ui_new_screen, LV_SYMBOL_POWER "...", ESP3D_MATRIX_SYMBOL_BUTTON_WIDTH,
+      ESP3D_MATRIX_SYMBOL_BUTTON_HEIGHT);
   if (!lv_obj_is_valid(btn_power_off_all)) {
     esp3d_log_e("Failed to create power off button");
     return;
@@ -756,6 +756,7 @@ void create(uint8_t target, ESP3DScreenType screenreturn) {
 
   lv_obj_add_event_cb(btn_up, temperatures_btn_up_event_cb, LV_EVENT_CLICKED,
                       temperatures_ta);
+  ESP3D_SET_CAPTION(btn_power_off_all, caption_all_off);
   lv_obj_add_event_cb(btn_power_off_all, power_all_heaters_event_cb,
                       LV_EVENT_CLICKED, temperatures_ta);
   lv_obj_add_event_cb(btnm_target, heater_matrix_buttons_event_cb,
@@ -794,6 +795,7 @@ void create(uint8_t target, ESP3DScreenType screenreturn) {
   }
   lv_obj_align_to(btn_set, label_unit2, LV_ALIGN_OUT_RIGHT_MID,
                   ESP3D_BUTTON_PRESSED_OUTLINE, 0);
+  ESP3D_SET_CAPTION(btn_set, caption_apply);
   lv_obj_add_event_cb(btn_set, temperatures_btn_ok_event_cb, LV_EVENT_CLICKED,
                       temperatures_ta);
   // Power off button to 0
@@ -804,6 +806,7 @@ void create(uint8_t target, ESP3DScreenType screenreturn) {
   }
   lv_obj_align_to(btn_stop, btn_set, LV_ALIGN_OUT_RIGHT_MID,
                   ESP3D_BUTTON_PRESSED_OUTLINE, 0);
+  ESP3D_SET_CAPTION(btn_stop, caption_off);
   lv_obj_add_event_cb(btn_stop, temperatures_btn_power_off_event_cb,
                       LV_EVENT_CLICKED, temperatures_ta);
   // Keyboard

@@ -411,6 +411,7 @@ void create() {
     esp3d_log_e("Failed to create filament button");
     return;
   }
+  ESP3D_SET_CAPTION(btn1, caption_filament);
   lv_obj_add_event_cb(btn1, event_button_filament_handler, LV_EVENT_CLICKED,
                       NULL);
 
@@ -422,6 +423,7 @@ void create() {
     esp3d_log_e("Failed to create leveling button");
     return;
   }
+  ESP3D_SET_CAPTION(main_btn_leveling, caption_leveling);
   lv_obj_add_event_cb(main_btn_leveling, event_button_leveling_handler,
                       LV_EVENT_CLICKED, NULL);
 
@@ -433,6 +435,7 @@ void create() {
     esp3d_log_e("Failed to create disable steppers button");
     return;
   }
+  ESP3D_SET_CAPTION(main_btn_disable_steppers, caption_motors_off);
   lv_obj_add_event_cb(main_btn_disable_steppers,
                       event_button_disable_steppers_handler, LV_EVENT_CLICKED,
                       NULL);
@@ -446,6 +449,7 @@ void create() {
     esp3d_log_e("Failed to create wifi button");
     return;
   }
+  ESP3D_SET_CAPTION(btn4, caption_wifi);
   lv_obj_add_event_cb(btn4, event_button_wifi_handler, LV_EVENT_CLICKED, NULL);
 #endif  // ESP3D_WIFI_FEATURE
 
@@ -457,6 +461,7 @@ void create() {
     esp3d_log_e("Failed to create settings button");
     return;
   }
+  ESP3D_SET_CAPTION(btn3, caption_settings);
   lv_obj_add_event_cb(btn3, event_button_settings_handler, LV_EVENT_CLICKED,
                       NULL);
 
@@ -468,6 +473,7 @@ void create() {
     esp3d_log_e("Failed to create informations button");
     return;
   }
+  ESP3D_SET_CAPTION(btn6, caption_info);
   lv_obj_add_event_cb(btn6, event_button_informations_handler, LV_EVENT_CLICKED,
                       NULL);
   esp3dTftui.set_current_screen(ESP3DScreenType::menu);
