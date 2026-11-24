@@ -49,8 +49,10 @@ class ESP3DTftUi final {
   void handleScreenPower();
 #if ESP3D_REMOTE_TOUCH_FEATURE
   // Press the screen at (x, y) for duration_ms through a virtual pointer
-  // device, then wait until LVGL has read the release.
-  bool remoteTouch(int32_t x, int32_t y, uint32_t duration_ms);
+  // device, then wait until LVGL has read the release. With (x2, y2) the
+  // press moves there during the duration (swipe, e.g. to scroll a list).
+  bool remoteTouch(int32_t x, int32_t y, uint32_t duration_ms,
+                   int32_t x2 = -1, int32_t y2 = -1);
 #endif  // ESP3D_REMOTE_TOUCH_FEATURE
 
  private:

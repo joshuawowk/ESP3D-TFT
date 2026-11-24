@@ -179,7 +179,8 @@ static bool query_int(httpd_req_t *req, const char *key, int32_t *value) {
   return true;
 }
 
-// GET /touch?x=<px>&y=<px>[&ms=<press duration>] : tap the screen remotely
+// GET /touch?x=<px>&y=<px>[&ms=<press duration>][&x2=<px>&y2=<px>] : tap
+// (or swipe to x2,y2) the screen remotely
 esp_err_t ESP3DHttpService::screen_touch_handler(httpd_req_t *req) {
   esp3d_log("Uri: %s", req->uri);
   ESP3DAuthenticationLevel authentication_level = getAuthenticationLevel(req);
@@ -196,9 +197,16 @@ esp_err_t ESP3DHttpService::screen_touch_handler(httpd_req_t *req) {
     httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Missing x or y");
     return ESP_FAIL;
   }
-  query_int(req, "ms", &ms);  // optional press duration
+  bool has_ms = query_int(req, "ms", &ms);  // optional press duration
   if (ms < 0) ms = 0;
-  if (!esp3dTftui.remoteTouch(x, y, (uint32_t)ms)) {
+  // optional end point: swipe from (x, y) to (x2, y2)
+  int32_t x2 = -1, y2 = -1;
+  bool swipe = query_int(req, "x2", &x2) && query_int(req, "y2", &y2);
+  if (swipe && !has_ms) {
+    ms = 400;  // default swipe duration
+  }
+  if (!esp3dTftui.remoteTouch(x, y, (uint32_t)ms, swipe ? x2 : -1,
+                              swipe ? y2 : -1)) {
     httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Invalid position");
     return ESP_FAIL;
   }
