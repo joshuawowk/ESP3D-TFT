@@ -136,5 +136,9 @@ void ESP3DTranslationService::init() {
       {ESP3DLabel::minutes_value, "%s min"},
       {ESP3DLabel::preheating, "Preheating %s"},
       {ESP3DLabel::preheat_preset, "Preset %s"},
+      {ESP3DLabel::caption_raise, "Raise"},
+      {ESP3DLabel::caption_lower, "Lower"},
+      {ESP3DLabel::caption_z_offset, "Z offset"},
+      {ESP3DLabel::z_offset_saved, "Z offset saved"},
   };
 }

@@ -42,6 +42,9 @@
 #include "gcode_host/esp3d_gcode_host_service.h"
 #include "screens/filament_screen.h"
 #include "screens/menu_screen.h"
+#if ESP3D_BABYSTEP_SCREEN
+#include "screens/babystep_screen.h"
+#endif  // ESP3D_BABYSTEP_SCREEN
 #include "screens/positions_screen.h"
 #include "screens/speed_screen.h"
 #include "screens/temperatures_screen.h"
@@ -62,6 +65,10 @@ void main_display_speed();
 void main_display_positions();
 void main_display_status_area();
 void main_display_pause();
+#if ESP3D_BABYSTEP_SCREEN
+lv_obj_t *main_btn_babystep = NULL;
+void main_display_babystep();
+#endif  // ESP3D_BABYSTEP_SCREEN
 void main_display_resume();
 void main_display_stop();
 #if ESP3D_SD_CARD_FEATURE
@@ -354,6 +361,17 @@ bool job_status_value_cb(ESP3DValuesIndex index, const char *value,
       }
     }
 
+#if ESP3D_BABYSTEP_SCREEN
+    if (index == ESP3DValuesIndex::job_status) {
+      static bool was_printing = false;
+      bool printing = strcmp(value, "processing") == 0 ||
+                      strcmp(value, "paused") == 0;
+      if (printing && !was_printing) {
+        babystepScreen::reset_total();  // new print: start from 0
+      }
+      was_printing = printing;
+    }
+#endif  // ESP3D_BABYSTEP_SCREEN
     if (esp3dTftui.get_current_screen() == ESP3DScreenType::main) {
       if (index == ESP3DValuesIndex::job_progress) {
         main_display_status_area();
@@ -362,6 +380,9 @@ bool job_status_value_cb(ESP3DValuesIndex index, const char *value,
         main_display_pause();
         main_display_resume();
         main_display_stop();
+#if ESP3D_BABYSTEP_SCREEN
+        main_display_babystep();
+#endif  // ESP3D_BABYSTEP_SCREEN
       }
 #if ESP3D_SD_CARD_FEATURE
       main_display_files();
@@ -533,6 +554,23 @@ void main_display_speed() {
  * It checks the current job status and updates the visibility of the pause
  * button accordingly.
  */
+#if ESP3D_BABYSTEP_SCREEN
+/**
+ * Shows the Z offset (babystep) button only while printing: the bottom row
+ * then has room for it (menu and files are hidden).
+ */
+void main_display_babystep() {
+  if (!lv_obj_is_valid(main_btn_babystep)) return;
+  const char *status =
+      esp3dTftValues.get_string_value(ESP3DValuesIndex::job_status);
+  if (status != nullptr && strcmp(status, "processing") == 0) {
+    lv_obj_clear_flag(main_btn_babystep, LV_OBJ_FLAG_HIDDEN);
+  } else {
+    lv_obj_add_flag(main_btn_babystep, LV_OBJ_FLAG_HIDDEN);
+  }
+}
+#endif  // ESP3D_BABYSTEP_SCREEN
+
 void main_display_pause() {
   std::string label_text =
       esp3dTftValues.get_string_value(ESP3DValuesIndex::job_status);
@@ -656,6 +694,11 @@ void main_screen_delay_timer_cb(lv_timer_t *timer) {
     case ESP3DScreenType::menu:
       menuScreen::create();
       break;
+#if ESP3D_BABYSTEP_SCREEN
+    case ESP3DScreenType::babystep:
+      babystepScreen::create();
+      break;
+#endif  // ESP3D_BABYSTEP_SCREEN
 
     default:
 
@@ -800,6 +843,20 @@ void event_button_fan_handler(lv_event_t *e) {
  *
  * @param e Pointer to the event object.
  */
+#if ESP3D_BABYSTEP_SCREEN
+void event_button_babystep_handler(lv_event_t *e) {
+  esp3d_log("Babystep Clicked");
+  if (main_screen_delay_timer) return;
+  next_screen = ESP3DScreenType::babystep;
+  if (ESP3D_BUTTON_ANIMATION_DELAY) {
+    main_screen_delay_timer = lv_timer_create(
+        main_screen_delay_timer_cb, ESP3D_BUTTON_ANIMATION_DELAY, NULL);
+  } else {
+    main_screen_delay_timer_cb(NULL);
+  }
+}
+#endif  // ESP3D_BABYSTEP_SCREEN
+
 void event_button_speed_handler(lv_event_t *e) {
   esp3d_log("Speed Clicked");
   if (main_screen_delay_timer) return;
@@ -1118,6 +1175,18 @@ void create() {
   ESP3D_SET_CAPTION(main_btn_stop, caption_stop);
   lv_obj_add_event_cb(main_btn_stop, event_button_stop_handler,
                       LV_EVENT_CLICKED, NULL);
+#if ESP3D_BABYSTEP_SCREEN
+  // Create button for Z offset (babystepping), shown while printing
+  main_btn_babystep = menuButton::create(ui_bottom_buttons_container,
+                                         LV_SYMBOL_UP "Z" LV_SYMBOL_DOWN);
+  if (!lv_obj_is_valid(main_btn_babystep)) {
+    esp3d_log_e("Error creating babystep button");
+    return;
+  }
+  ESP3D_SET_CAPTION(main_btn_babystep, caption_z_offset);
+  lv_obj_add_event_cb(main_btn_babystep, event_button_babystep_handler,
+                      LV_EVENT_CLICKED, NULL);
+#endif  // ESP3D_BABYSTEP_SCREEN
 #if ESP3D_SD_CARD_FEATURE
   // Create button and label for files
   main_btn_files =
@@ -1153,6 +1222,9 @@ void create() {
   main_display_files();
 #endif  // ESP3D_SD_CARD_FEATURE
   main_display_stop();
+#if ESP3D_BABYSTEP_SCREEN
+  main_display_babystep();
+#endif  // ESP3D_BABYSTEP_SCREEN
   main_display_menu();
   main_display_speed();
   if (show_fan_button) main_display_fan();

@@ -31,6 +31,9 @@
 // Preheat preset buttons on the temperatures screen (needs captions)
 #define ESP3D_PREHEAT_PRESETS 1
 
+// Z offset (babystepping) button on the main screen while printing
+#define ESP3D_BABYSTEP_SCREEN 1
+
 // Back button size
 #define ESP3D_BACK_BUTTON_WIDTH 80
 #define ESP3D_BACK_BUTTON_HEIGHT 66
