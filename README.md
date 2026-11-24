@@ -42,6 +42,7 @@ Espressif IDF 5.1.5
 * ESP32 + SDReader + 3.5' Resistive screen (480x320) [Rotrics TFT](https://rotrics.com/products/3-5-inch-touchscreen)
 * ESP32-S3 based + SDReader + PSRAM + 4.3' capacitive screen  (800x600) [model](https://www.aliexpress.com/item/1005003814428825.html)
 * ESP32-S3 based + SDReader + PSRAM + 3.5' capacitive screen (320x480) [model](https://www.aliexpress.com/item/1005004309826174.html)
+* ESP32-S3 based + SDReader + PSRAM + 4.0' capacitive screen (480x480) Guition ESP32-S3-4848S040, see [docs/hardware/ESP32S3_4848S040C.md](docs/hardware/ESP32S3_4848S040C.md)
 
 * More on https://esp3d.io/esp3d-tft/v1.x/hardware/index.html
 
