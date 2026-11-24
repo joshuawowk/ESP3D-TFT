@@ -62,6 +62,59 @@ static void lv_tick_task(void *arg) {
  * you should lock on the very same semaphore! */
 SemaphoreHandle_t xGuiSemaphore = nullptr;
 
+#if ESP3D_REMOTE_TOUCH_FEATURE
+#include <atomic>
+// Virtual pointer fed by GET /touch. Read by LVGL in the UI task.
+static std::atomic<int32_t> remote_touch_x{0};
+static std::atomic<int32_t> remote_touch_y{0};
+static std::atomic<int64_t> remote_touch_release_at{0};
+static std::atomic<bool> remote_touch_released{true};
+
+static void remote_touch_read(lv_indev_drv_t *drv, lv_indev_data_t *data) {
+  (void)drv;
+  data->point.x = remote_touch_x;
+  data->point.y = remote_touch_y;
+  if (esp3d_hal::millis() < remote_touch_release_at) {
+    data->state = LV_INDEV_STATE_PR;
+  } else {
+    data->state = LV_INDEV_STATE_REL;
+    remote_touch_released = true;
+  }
+}
+
+static void remote_touch_register() {
+  static lv_indev_drv_t remote_indev_drv;
+  lv_indev_drv_init(&remote_indev_drv);
+  remote_indev_drv.type = LV_INDEV_TYPE_POINTER;
+  remote_indev_drv.read_cb = remote_touch_read;
+  if (lv_indev_drv_register(&remote_indev_drv) == nullptr) {
+    esp3d_log_e("Remote touch input registration failed");
+  }
+}
+
+bool ESP3DTftUi::remoteTouch(int32_t x, int32_t y, uint32_t duration_ms) {
+  if (x < 0 || y < 0 || x >= LV_HOR_RES || y >= LV_VER_RES) {
+    return false;
+  }
+  if (duration_ms < 50) duration_ms = 50;
+  if (duration_ms > 5000) duration_ms = 5000;
+  // Wait for a previous tap to be released first
+  for (int i = 0; i < 100 && !remote_touch_released; i++) {
+    esp3d_hal::wait(10);
+  }
+  remote_touch_x = x;
+  remote_touch_y = y;
+  remote_touch_released = false;
+  remote_touch_release_at = esp3d_hal::millis() + duration_ms;
+  // Hold the caller until LVGL has seen the release (input read period 30ms)
+  esp3d_hal::wait(duration_ms);
+  for (int i = 0; i < 50 && !remote_touch_released; i++) {
+    esp3d_hal::wait(10);
+  }
+  return remote_touch_released;
+}
+#endif  // ESP3D_REMOTE_TOUCH_FEATURE
+
 static void guiTask(void *pvParameter) {
   (void)pvParameter;
   xGuiSemaphore = xSemaphoreCreateMutex();
@@ -78,6 +131,9 @@ static void guiTask(void *pvParameter) {
   ESP_ERROR_CHECK(
       esp_timer_start_periodic(periodic_timer, LV_TICK_PERIOD_MS * 1000));
 #endif  // !LV_TICK_CUSTOM
+#if ESP3D_REMOTE_TOUCH_FEATURE
+  remote_touch_register();
+#endif  // ESP3D_REMOTE_TOUCH_FEATURE
   create_application();
 
   while (1) {

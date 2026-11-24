@@ -33,7 +33,7 @@
 #endif  // ESP3D_WEBDAV_SERVICES_FEATURE
 #include "tasks_def.h"
 #if ESP3D_DISPLAY_FEATURE
-#include "lvgl.h"
+#include "esp3d_tft_ui.h"  // lvgl.h, ESP3D_REMOTE_TOUCH_FEATURE
 #if LV_USE_SNAPSHOT
 // GET /snapshot returns the current screen as a BMP image
 #define ESP3D_SCREEN_SNAPSHOT_FEATURE 1
@@ -136,6 +136,9 @@ class ESP3DHttpService final {
 #if ESP3D_SCREEN_SNAPSHOT_FEATURE
   static esp_err_t screen_snapshot_handler(httpd_req_t *req);
 #endif  // ESP3D_SCREEN_SNAPSHOT_FEATURE
+#if ESP3D_REMOTE_TOUCH_FEATURE
+  static esp_err_t screen_touch_handler(httpd_req_t *req);
+#endif  // ESP3D_REMOTE_TOUCH_FEATURE
 #if ESP3D_SD_CARD_FEATURE
   static esp_err_t sdfiles_handler(httpd_req_t *req);
   static esp_err_t upload_to_sd_handler(const uint8_t *data, size_t datasize,

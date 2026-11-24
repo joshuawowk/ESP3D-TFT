@@ -1,4 +1,4 @@
-# Screen snapshot
+# Remote screen: snapshot and touch
 
 Targets built with `LV_USE_SNAPSHOT 1` in their `lv_conf.h` (currently
 `ESP32S3_4848S040C`) can capture what is on the display.
@@ -16,6 +16,29 @@ same login as the other web endpoints.
 
 Useful for documentation, remote support, and checking UI changes without
 looking at the panel.
+
+## Remote touch
+
+```bash
+curl "http://<esp3d-tft-ip>/touch?x=380&y=377"          # tap
+curl "http://<esp3d-tft-ip>/touch?x=240&y=240&ms=1500"  # long press
+```
+
+`GET /touch?x=&y=[&ms=]` presses the screen at `(x, y)` for `ms`
+milliseconds (default 120, range 50 to 5000) through a second, virtual LVGL
+pointer device, then returns `ok` once LVGL has read the release. Taps are
+serialised, so a script can chain them:
+
+```bash
+H=http://<esp3d-tft-ip>
+curl -s "$H/touch?x=380&y=377" && curl -s -o menu.bmp "$H/snapshot"
+```
+
+Together with `/snapshot`, this drives and checks the whole UI from a PC:
+useful for remote support, documentation screenshots and automated UI tests.
+It is compiled on the same targets as `/snapshot` (display builds with web
+services and `LV_USE_SNAPSHOT 1`). Like `/command`, it is open to anyone on
+the network unless ESP3D authentication is enabled.
 
 ## To the SD card
 

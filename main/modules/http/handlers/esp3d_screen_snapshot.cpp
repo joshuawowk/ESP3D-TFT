@@ -149,3 +149,60 @@ esp_err_t ESP3DHttpService::screen_snapshot_handler(httpd_req_t *req) {
   return httpd_resp_send_chunk(req, NULL, 0);
 }
 #endif  // ESP3D_SCREEN_SNAPSHOT_FEATURE
+
+#if ESP3D_REMOTE_TOUCH_FEATURE
+#include <stdlib.h>
+#include <string.h>
+
+#include "authentication/esp3d_authentication.h"
+#include "esp3d_log.h"
+#include "esp3d_tft_ui.h"
+
+// Read an integer from the URL query string (GET parameters)
+static bool query_int(httpd_req_t *req, const char *key, int32_t *value) {
+  char query[96];
+  char field[16];
+  size_t len = httpd_req_get_url_query_len(req);
+  if (len == 0 || len >= sizeof(query)) {
+    return false;
+  }
+  if (httpd_req_get_url_query_str(req, query, sizeof(query)) != ESP_OK ||
+      httpd_query_key_value(query, key, field, sizeof(field)) != ESP_OK) {
+    return false;
+  }
+  char *end = nullptr;
+  long v = strtol(field, &end, 10);
+  if (end == field) {
+    return false;
+  }
+  *value = (int32_t)v;
+  return true;
+}
+
+// GET /touch?x=<px>&y=<px>[&ms=<press duration>] : tap the screen remotely
+esp_err_t ESP3DHttpService::screen_touch_handler(httpd_req_t *req) {
+  esp3d_log("Uri: %s", req->uri);
+  ESP3DAuthenticationLevel authentication_level = getAuthenticationLevel(req);
+  httpd_resp_set_http_hdr(req);
+#if ESP3D_AUTHENTICATION_FEATURE
+  if (authentication_level == ESP3DAuthenticationLevel::guest) {
+    return not_authenticated_handler(req);
+  }
+#else
+  (void)authentication_level;
+#endif  // ESP3D_AUTHENTICATION_FEATURE
+  int32_t x = 0, y = 0, ms = 120;
+  if (!query_int(req, "x", &x) || !query_int(req, "y", &y)) {
+    httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Missing x or y");
+    return ESP_FAIL;
+  }
+  query_int(req, "ms", &ms);  // optional press duration
+  if (ms < 0) ms = 0;
+  if (!esp3dTftui.remoteTouch(x, y, (uint32_t)ms)) {
+    httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Invalid position");
+    return ESP_FAIL;
+  }
+  httpd_resp_set_type(req, "text/plain");
+  return httpd_resp_sendstr(req, "ok");
+}
+#endif  // ESP3D_REMOTE_TOUCH_FEATURE
