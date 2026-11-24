@@ -389,6 +389,7 @@ void create() {
   }
   lv_obj_align(refresh_button, LV_ALIGN_BOTTOM_MID, 0,
                -ESP3D_BUTTON_PRESSED_OUTLINE);
+  ESP3D_SET_CAPTION(refresh_button, caption_refresh);
   lv_obj_add_event_cb(refresh_button, event_button_files_refresh_handler,
                       LV_EVENT_CLICKED, NULL);
   // label path

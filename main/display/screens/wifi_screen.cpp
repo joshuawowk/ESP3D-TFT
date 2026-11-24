@@ -345,17 +345,20 @@ void create() {
   // Create button and label for ap
   btn = symbolButton::create(ui_buttons_container, LV_SYMBOL_ACCESS_POINT,
                              ESP3D_BUTTON_WIDTH, ESP3D_BUTTON_WIDTH);
+  ESP3D_SET_CAPTION(btn, caption_access_point);
   lv_obj_add_event_cb(btn, event_button_ap_handler, LV_EVENT_CLICKED, NULL);
 
   // Create button and label for sta
   btn = symbolButton::create(ui_buttons_container, LV_SYMBOL_STATION_MODE,
                              ESP3D_BUTTON_WIDTH, ESP3D_BUTTON_WIDTH);
+  ESP3D_SET_CAPTION(btn, caption_client);
   lv_obj_add_event_cb(btn, event_button_sta_handler, LV_EVENT_CLICKED, NULL);
 
   // Create button and label for no wifi
   btn_no_wifi =
       symbolButton::create(ui_buttons_container, LV_SYMBOL_WIFI,
                            ESP3D_BUTTON_WIDTH, ESP3D_BUTTON_WIDTH, true, true);
+  ESP3D_SET_CAPTION(btn_no_wifi, caption_no_wifi);
   lv_obj_add_event_cb(btn_no_wifi, event_button_no_wifi_handler,
                       LV_EVENT_CLICKED, NULL);
 

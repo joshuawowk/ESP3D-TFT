@@ -783,6 +783,7 @@ void create() {
     return;
   }
 
+  ESP3D_SET_CAPTION(btn_ok, caption_connect);
   lv_obj_add_event_cb(btn_ok, sta_event_button_ok_handler, LV_EVENT_CLICKED,
                       NULL);
   lv_obj_align(btn_ok, LV_ALIGN_TOP_RIGHT, -ESP3D_BUTTON_PRESSED_OUTLINE,
@@ -796,6 +797,7 @@ void create() {
     esp3d_log_e("Failed to create button");
     return;
   }
+  ESP3D_SET_CAPTION(btn_save, caption_save);
   lv_obj_add_event_cb(btn_save, sta_event_button_save_handler, LV_EVENT_CLICKED,
                       NULL);
 
@@ -810,6 +812,7 @@ void create() {
     return;
   }
 
+  ESP3D_SET_CAPTION(btn_scan, caption_scan);
   lv_obj_add_event_cb(btn_scan, sta_event_button_scan_handler, LV_EVENT_CLICKED,
                       NULL);
   lv_obj_align_to(btn_scan, btn_ok, LV_ALIGN_OUT_BOTTOM_MID, 0,

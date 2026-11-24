@@ -218,6 +218,7 @@ void create(bool autoleveling) {
     esp3d_log_e("Failed to create manual leveling button");
     return;
   }
+  ESP3D_SET_CAPTION(btn, caption_manual);
   lv_obj_add_event_cb(btn, event_button_manual_handler, LV_EVENT_CLICKED, NULL);
 
   // Create button and label for auto leveling
@@ -228,6 +229,7 @@ void create(bool autoleveling) {
     esp3d_log_e("Failed to create auto leveling button");
     return;
   }
+  ESP3D_SET_CAPTION(btn, caption_auto);
   lv_obj_add_event_cb(btn, event_button_auto_handler, LV_EVENT_CLICKED, NULL);
   esp3dTftui.set_current_screen(ESP3DScreenType::leveling);
 }

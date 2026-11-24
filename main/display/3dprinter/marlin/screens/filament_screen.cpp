@@ -597,6 +597,7 @@ void create() {
 
   lv_obj_align_to(btn_edit, label_unit1, LV_ALIGN_OUT_RIGHT_MID,
                   ESP3D_BUTTON_PRESSED_OUTLINE / 2, 0);
+  ESP3D_SET_CAPTION(btn_edit, caption_edit);
   lv_obj_add_event_cb(btn_edit, event_button_filament_edit_handler,
                       LV_EVENT_CLICKED, NULL);
 

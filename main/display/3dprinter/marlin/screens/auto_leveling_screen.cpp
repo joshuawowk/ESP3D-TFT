@@ -384,6 +384,7 @@ void create() {
   lv_obj_align_to(btn_start, auto_leveling_screen_table,
                   LV_ALIGN_OUT_BOTTOM_MID, 0, ESP3D_BUTTON_PRESSED_OUTLINE);
 
+  ESP3D_SET_CAPTION(btn_start, caption_start);
   lv_obj_add_event_cb(btn_start, event_button_auto_leveling_start_handler,
                       LV_EVENT_CLICKED, NULL);
 

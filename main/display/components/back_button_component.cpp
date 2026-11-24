@@ -45,6 +45,7 @@ lv_obj_t *create(lv_obj_t *parent) {
                            ESP3D_BACK_BUTTON_HEIGHT);
   lv_obj_align(btn, LV_ALIGN_BOTTOM_RIGHT, -ESP3D_BUTTON_PRESSED_OUTLINE,
                -ESP3D_BUTTON_PRESSED_OUTLINE);
+  ESP3D_SET_CAPTION(btn, caption_back);
   return btn;
 }
 

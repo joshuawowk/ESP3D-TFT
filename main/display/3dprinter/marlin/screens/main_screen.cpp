@@ -1019,6 +1019,7 @@ void create() {
     return;
   }
 
+  ESP3D_SET_CAPTION(main_btn_extruder_0, caption_nozzle);
   lv_obj_add_event_cb(main_btn_extruder_0, event_button_E0_handler,
                       LV_EVENT_CLICKED, NULL);
 
@@ -1028,6 +1029,7 @@ void create() {
     esp3d_log_e("Error creating extruder 1 button");
     return;
   }
+  ESP3D_SET_CAPTION(main_btn_extruder_1, caption_nozzle_2);
   lv_obj_add_event_cb(main_btn_extruder_1, event_button_E1_handler,
                       LV_EVENT_CLICKED, NULL);
 
@@ -1037,6 +1039,7 @@ void create() {
     esp3d_log_e("Error creating bed button");
     return;
   }
+  ESP3D_SET_CAPTION(main_btn_bed, caption_bed);
   lv_obj_add_event_cb(main_btn_bed, event_button_Bed_handler, LV_EVENT_CLICKED,
                       NULL);
 
@@ -1049,6 +1052,7 @@ void create() {
     return;
   }
 
+  ESP3D_SET_CAPTION(main_btn_positions, caption_position);
   lv_obj_add_event_cb(main_btn_positions, event_button_positions_handler,
                       LV_EVENT_CLICKED, NULL);
 
@@ -1070,6 +1074,7 @@ void create() {
       esp3d_log_e("Error creating fan button");
       return;
     }
+    ESP3D_SET_CAPTION(main_btn_fan, caption_fan);
     lv_obj_add_event_cb(main_btn_fan, event_button_fan_handler,
                         LV_EVENT_CLICKED, NULL);
   }
@@ -1080,12 +1085,14 @@ void create() {
     esp3d_log_e("Error creating speed button");
     return;
   }
+  ESP3D_SET_CAPTION(main_btn_speed, caption_speed);
   lv_obj_add_event_cb(main_btn_speed, event_button_speed_handler,
                       LV_EVENT_CLICKED, NULL);
 
   // Create button and label for pause
   main_btn_pause =
       menuButton::create(ui_bottom_buttons_container, LV_SYMBOL_PAUSE);
+  ESP3D_SET_CAPTION(main_btn_pause, caption_pause);
   lv_obj_add_event_cb(main_btn_pause, event_button_pause_handler,
                       LV_EVENT_CLICKED, NULL);
 
@@ -1097,6 +1104,7 @@ void create() {
     return;
   }
 
+  ESP3D_SET_CAPTION(main_btn_resume, caption_resume);
   lv_obj_add_event_cb(main_btn_resume, event_button_resume_handler,
                       LV_EVENT_CLICKED, NULL);
 
@@ -1107,6 +1115,7 @@ void create() {
     esp3d_log_e("Error creating stop button");
     return;
   }
+  ESP3D_SET_CAPTION(main_btn_stop, caption_stop);
   lv_obj_add_event_cb(main_btn_stop, event_button_stop_handler,
                       LV_EVENT_CLICKED, NULL);
 #if ESP3D_SD_CARD_FEATURE
@@ -1117,6 +1126,7 @@ void create() {
     esp3d_log_e("Error creating files button");
     return;
   }
+  ESP3D_SET_CAPTION(main_btn_files, caption_files);
   lv_obj_add_event_cb(main_btn_files, event_button_files_handler,
                       LV_EVENT_CLICKED, NULL);
 #endif  // ESP3D_SD_CARD_FEATURE
@@ -1128,6 +1138,7 @@ void create() {
     esp3d_log_e("Error creating menu button");
     return;
   }
+  ESP3D_SET_CAPTION(main_btn_menu, caption_menu);
   lv_obj_add_event_cb(main_btn_menu, event_button_menu_handler,
                       LV_EVENT_CLICKED, NULL);
   esp3dTftui.set_current_screen(ESP3DScreenType::main);

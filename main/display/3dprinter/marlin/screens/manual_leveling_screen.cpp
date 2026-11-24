@@ -526,6 +526,7 @@ void create(bool autoleveling) {
   }
   lv_obj_align(btn_previous, LV_ALIGN_BOTTOM_LEFT, ESP3D_BUTTON_PRESSED_OUTLINE,
                -ESP3D_BUTTON_PRESSED_OUTLINE);
+  ESP3D_SET_CAPTION(btn_previous, caption_previous);
   lv_obj_add_event_cb(btn_previous,
                       event_button_manual_leveling_previous_handler,
                       LV_EVENT_CLICKED, btnm_leveling_position);
@@ -543,6 +544,7 @@ void create(bool autoleveling) {
   lv_obj_align_to(btn_next, btnm_leveling_position, LV_ALIGN_OUT_BOTTOM_RIGHT,
                   0, ESP3D_BUTTON_PRESSED_OUTLINE);
 
+  ESP3D_SET_CAPTION(btn_next, caption_next);
   lv_obj_add_event_cb(btn_next, event_button_manual_leveling_next_handler,
                       LV_EVENT_CLICKED, btnm_leveling_position);
 
@@ -556,6 +558,7 @@ void create(bool autoleveling) {
 
   lv_obj_align(btn_help, LV_ALIGN_TOP_RIGHT, -ESP3D_BUTTON_PRESSED_OUTLINE,
                ESP3D_BUTTON_PRESSED_OUTLINE);
+  ESP3D_SET_CAPTION(btn_help, caption_help);
   lv_obj_add_event_cb(btn_help, event_button_manual_leveling_help_handler,
                       LV_EVENT_CLICKED, NULL);
 
@@ -567,6 +570,7 @@ void create(bool autoleveling) {
   }
   lv_obj_align_to(btn_start, btnm_leveling_position, LV_ALIGN_OUT_RIGHT_MID,
                   (LV_HOR_RES / 4) - ESP3D_SYMBOL_BUTTON_WIDTH / 2, 0);
+  ESP3D_SET_CAPTION(btn_start, caption_start);
   lv_obj_add_event_cb(btn_start, event_button_manual_leveling_start_handler,
                       LV_EVENT_CLICKED, btnm_leveling_position);
 

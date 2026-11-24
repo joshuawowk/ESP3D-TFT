@@ -72,4 +72,36 @@ lv_obj_t *create(lv_obj_t *container, const char *text, int width, int height,
   }
   return btn;
 }
+
+#if ESP3D_BUTTON_CAPTIONS
+void setCaption(lv_obj_t *btn, const char *caption) {
+  if (!lv_obj_is_valid(btn) || caption == nullptr || caption[0] == '\0') {
+    return;
+  }
+  uint32_t count = lv_obj_get_child_cnt(btn);
+  // Content is centered, so side padding only steals caption width
+  lv_obj_set_style_pad_left(btn, 1, LV_PART_MAIN);
+  lv_obj_set_style_pad_right(btn, 1, LV_PART_MAIN);
+  // The caption is the last child: live values keep updating child 0.
+  // It wraps onto a second line if it does not fit the button width.
+  lv_obj_t *label = lv_label_create(btn);
+  if (!lv_obj_is_valid(label)) {
+    esp3d_log_e("Failed to create caption label");
+    return;
+  }
+  lv_obj_set_style_text_font(label, ESP3D_BUTTON_CAPTION_FONT, 0);
+  lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
+  lv_obj_set_width(label, lv_pct(100));
+  lv_label_set_long_mode(label, LV_LABEL_LONG_WRAP);
+  lv_label_set_text(label, caption);
+  lv_obj_align(label, LV_ALIGN_BOTTOM_MID, 0, 0);
+  lv_obj_update_layout(label);
+  lv_coord_t caption_height = lv_obj_get_height(label);
+  // Shift the existing content (symbol/value, slash overlay) up to make room
+  for (uint32_t i = 0; i < count; i++) {
+    lv_obj_align(lv_obj_get_child(btn, i), LV_ALIGN_CENTER, 0,
+                 -(caption_height + ESP3D_BUTTON_CAPTION_GAP) / 2);
+  }
+}
+#endif  // ESP3D_BUTTON_CAPTIONS
 }  // namespace symbolButton

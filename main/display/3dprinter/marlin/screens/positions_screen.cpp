@@ -493,8 +493,8 @@ void create(uint8_t target_id) {
                   -ESP3D_BUTTON_PRESSED_OUTLINE, 0);
   // Home all axis
   lv_obj_t *btn_home_all = symbolButton::create(
-      ui_new_screen, LV_SYMBOL_HOME "xyz", ESP3D_MATRIX_BUTTON_WIDTH,
-      ESP3D_MATRIX_BUTTON_HEIGHT);
+      ui_new_screen, LV_SYMBOL_HOME "xyz", ESP3D_MATRIX_SYMBOL_BUTTON_WIDTH,
+      ESP3D_MATRIX_SYMBOL_BUTTON_HEIGHT);
   if (!lv_obj_is_valid(btn_home_all)) {
     esp3d_log_e("Error creating home all button");
     return;
@@ -629,6 +629,7 @@ void create(uint8_t target_id) {
   }
   lv_obj_align_to(btn_set, label_unit2, LV_ALIGN_OUT_RIGHT_MID,
                   ESP3D_BUTTON_PRESSED_OUTLINE, 0);
+  ESP3D_SET_CAPTION(btn_set, caption_apply);
   lv_obj_add_event_cb(btn_set, positions_btn_ok_event_cb, LV_EVENT_CLICKED,
                       position_ta);
   // Home axis
@@ -639,8 +640,10 @@ void create(uint8_t target_id) {
   }
   lv_obj_align_to(btn_home_axis, btn_set, LV_ALIGN_OUT_RIGHT_MID,
                   ESP3D_BUTTON_PRESSED_OUTLINE, 0);
+  ESP3D_SET_CAPTION(btn_home_axis, caption_home);
   lv_obj_add_event_cb(btn_home_axis, positions_btn_home_axis_event_cb,
                       LV_EVENT_CLICKED, position_ta);
+  ESP3D_SET_CAPTION(btn_home_all, caption_home_all);
   lv_obj_add_event_cb(btn_home_all, home_all_axis_button_event_cb,
                       LV_EVENT_CLICKED, position_ta);
 
