@@ -106,8 +106,15 @@ enum class ESP3DSettingIndex : uint16_t {
   esp3d_time_server3,
   esp3d_timezone,
   esp3d_webdav_on,
+  esp3d_screen_brightness,  // backlight %, if the board supports it
+  esp3d_screen_sleep,       // minutes of inactivity before the screen sleeps
   unknown_index
 };
+
+#if ESP3D_DISPLAY_FEATURE
+// Screen brightness and sleep settings exist for this firmware flavour
+#define ESP3D_SCREEN_POWER_SETTINGS 1
+#endif  // ESP3D_DISPLAY_FEATURE
 
 enum class ESP3DTargetFirmware : uint8_t {
   unknown = 0,

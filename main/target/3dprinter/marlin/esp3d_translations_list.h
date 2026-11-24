@@ -127,6 +127,10 @@ enum class ESP3DLabel : uint16_t {
   caption_scan,
   caption_refresh,
   caption_connect,
+  screen_brightness,
+  screen_sleep,
+  never,
+  minutes_value,
   unknown_index,  // must be last
 };
 

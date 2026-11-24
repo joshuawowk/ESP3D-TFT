@@ -41,6 +41,12 @@ class ESP3DTftUi final {
   // Lock/unlock LVGL for calls made outside the UI task
   bool lockGui(uint32_t timeout_ms);
   void unlockGui();
+  // Re-read the screen brightness / sleep settings (any task)
+  void applyScreenPowerSettings();
+  // True if the board can drive its backlight (bsp_set_backlight)
+  bool hasBacklightControl();
+  // Brightness and sleep timeout handling, called by the UI task
+  void handleScreenPower();
 #if ESP3D_REMOTE_TOUCH_FEATURE
   // Press the screen at (x, y) for duration_ms through a virtual pointer
   // device, then wait until LVGL has read the release.

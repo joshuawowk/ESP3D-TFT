@@ -130,5 +130,9 @@ void ESP3DTranslationService::init() {
       {ESP3DLabel::caption_scan, "Scan"},
       {ESP3DLabel::caption_refresh, "Refresh"},
       {ESP3DLabel::caption_connect, "Connect"},
+      {ESP3DLabel::screen_brightness, "Brightness"},
+      {ESP3DLabel::screen_sleep, "Screen sleep"},
+      {ESP3DLabel::never, "Never"},
+      {ESP3DLabel::minutes_value, "%s min"},
   };
 }

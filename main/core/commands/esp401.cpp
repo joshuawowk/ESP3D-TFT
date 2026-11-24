@@ -20,6 +20,9 @@
 #include "authentication/esp3d_authentication.h"
 #include "esp3d_client.h"
 #include "esp3d_commands.h"
+#if ESP3D_DISPLAY_FEATURE
+#include "esp3d_tft_ui.h"
+#endif  // ESP3D_DISPLAY_FEATURE
 #include "esp3d_settings.h"
 #include "esp3d_string.h"
 #if ESP3D_SD_CARD_FEATURE
@@ -203,6 +206,12 @@ void ESP3DCommands::ESP401(int cmd_params_pos, ESP3DMessage* msg) {
         case ESP3DSettingIndex::esp3d_ui_language:
           esp3dTranslationService.begin();
           break;
+#if ESP3D_SCREEN_POWER_SETTINGS
+        case ESP3DSettingIndex::esp3d_screen_brightness:
+        case ESP3DSettingIndex::esp3d_screen_sleep:
+          esp3dTftui.applyScreenPowerSettings();
+          break;
+#endif  // ESP3D_SCREEN_POWER_SETTINGS
 #if ESP3D_WEBDAV_SERVICES_FEATURE
         case ESP3DSettingIndex::esp3d_webdav_on:
           esp3dHttpService.webdavActive(true);

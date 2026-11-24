@@ -174,6 +174,7 @@ lv_obj_t *create(lv_obj_t *container, const char *text, const char *title,
   }
   lv_obj_align_to(btnOk, btnback, LV_ALIGN_OUT_LEFT_MID,
                   -ESP3D_BUTTON_PRESSED_OUTLINE, 0);
+  ESP3D_SET_CAPTION(btnOk, caption_apply);
   lv_obj_add_event_cb(btnOk, event_button_choice_editor_handler,
                       LV_EVENT_CLICKED, (void *)callbackFn);
 

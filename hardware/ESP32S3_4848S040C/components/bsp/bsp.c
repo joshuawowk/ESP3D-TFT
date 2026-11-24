@@ -50,6 +50,7 @@ static void lv_touch_read(lv_indev_drv_t *drv, lv_indev_data_t *data);
  **********************/
 #if ESP3D_DISPLAY_FEATURE
 static i2c_bus_handle_t i2c_bus_handle = NULL;
+static disp_backlight_t *bcklt_handle = NULL;
 static lv_disp_drv_t disp_drv;
 static esp_lcd_panel_handle_t disp_panel;
 
@@ -76,7 +77,6 @@ static SemaphoreHandle_t _sem_gui_ready;
  */
 esp_err_t bsp_init(void) {
 #if ESP3D_DISPLAY_FEATURE
-  disp_backlight_t *bcklt_handle = NULL;
   esp3d_log("Initializing display backlight...");
   esp_err_t err = disp_backlight_create(&disp_bcklt_cfg, &bcklt_handle);
   if (err != ESP_OK) {
@@ -237,6 +237,25 @@ esp_err_t bsp_releaseFs(void) {
   return ret;
 #endif  // ESP3D_DISPLAY_FEATURE
   return ESP_OK;
+}
+
+/**
+ * @brief Sets the display backlight brightness.
+ *
+ * @param percent Brightness in percent (0 turns the backlight off).
+ * @return ESP_OK on success, an error code otherwise.
+ */
+esp_err_t bsp_set_backlight(uint8_t percent) {
+#if ESP3D_DISPLAY_FEATURE
+  if (bcklt_handle == NULL) {
+    return ESP_ERR_INVALID_STATE;
+  }
+  if (percent > 100) percent = 100;
+  return disp_backlight_set(bcklt_handle, percent);
+#else
+  (void)percent;
+  return ESP_ERR_NOT_SUPPORTED;
+#endif  // ESP3D_DISPLAY_FEATURE
 }
 
 /**********************
