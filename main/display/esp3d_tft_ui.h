@@ -32,6 +32,9 @@ class ESP3DTftUi final {
   bool end();
   void set_current_screen(ESP3DScreenType screen) { _current_screen = screen; }
   ESP3DScreenType get_current_screen() { return _current_screen; }
+  // Lock/unlock LVGL for calls made outside the UI task
+  bool lockGui(uint32_t timeout_ms);
+  void unlockGui();
 
  private:
   ESP3DScreenType _current_screen = ESP3DScreenType::none;

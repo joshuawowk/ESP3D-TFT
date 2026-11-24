@@ -27,6 +27,10 @@
 #include "esp3d_settings.h"
 #if ESP3D_SD_CARD_FEATURE
 #include "sd_def.h"
+#if ESP3D_DISPLAY_FEATURE
+// LV_USE_SNAPSHOT (lv_conf.h) gates the [ESP216] snapshot command
+#include "lvgl.h"
+#endif  // ESP3D_DISPLAY_FEATURE
 #endif  // ESP3D_SD_CARD_FEATURE
 
 #ifdef __cplusplus

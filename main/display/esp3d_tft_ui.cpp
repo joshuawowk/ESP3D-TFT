@@ -60,7 +60,7 @@ static void lv_tick_task(void *arg) {
 /* Creates a semaphore to handle concurrent call to lvgl stuff
  * If you wish to call *any* lvgl function from other threads/tasks
  * you should lock on the very same semaphore! */
-SemaphoreHandle_t xGuiSemaphore;
+SemaphoreHandle_t xGuiSemaphore = nullptr;
 
 static void guiTask(void *pvParameter) {
   (void)pvParameter;
@@ -97,6 +97,19 @@ static void guiTask(void *pvParameter) {
 }
 
 ESP3DTftUi::ESP3DTftUi() {}
+
+bool ESP3DTftUi::lockGui(uint32_t timeout_ms) {
+  if (xGuiSemaphore == nullptr) {
+    return false;
+  }
+  return xSemaphoreTake(xGuiSemaphore, pdMS_TO_TICKS(timeout_ms)) == pdTRUE;
+}
+
+void ESP3DTftUi::unlockGui() {
+  if (xGuiSemaphore != nullptr) {
+    xSemaphoreGive(xGuiSemaphore);
+  }
+}
 
 ESP3DTftUi::~ESP3DTftUi() {}
 

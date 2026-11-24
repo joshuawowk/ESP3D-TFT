@@ -78,6 +78,12 @@
 #define CAMERA_HANDLER_CNT 0
 #endif  // ESP3D_CAMERA_FEATURE
 
+#if ESP3D_SCREEN_SNAPSHOT_FEATURE
+#define SCREEN_SNAPSHOT_HANDLER_CNT 1
+#else
+#define SCREEN_SNAPSHOT_HANDLER_CNT 0
+#endif  // ESP3D_SCREEN_SNAPSHOT_FEATURE
+
 ESP3DHttpService esp3dHttpService;
 
 PostUploadContext ESP3DHttpService::_post_files_upload_ctx = {
@@ -247,7 +253,8 @@ bool ESP3DHttpService::begin() {
       LOGIN_HANDLER_CNT + FILES_UPLOAD_HANDLER_CNT + SDFILES_HANDLER_CNT +
       SDFILES_UPLOAD_HANDLER_CNT + UPDATEFW_UPLOAD_HANDLER_CNT +
       WEBSOCKET_WEBUI_HANDLER_CNT + WEBSOCKET_DATA_HANDLER_CNT +
-      WEBDAV_HANDLER_CNT + FILE_NOT_FOUND_HANDLER_CNT + CAMERA_HANDLER_CNT;
+      WEBDAV_HANDLER_CNT + FILE_NOT_FOUND_HANDLER_CNT + CAMERA_HANDLER_CNT +
+      SCREEN_SNAPSHOT_HANDLER_CNT;
   // backlog_conn
   config.backlog_conn = 8;
   config.close_fn = close_fn;
@@ -331,6 +338,23 @@ bool ESP3DHttpService::begin() {
     if (ESP_OK != httpd_register_uri_handler(_server, &config_handler_config)) {
       esp3d_log_e("config handler registration failed");
     }
+
+#if ESP3D_SCREEN_SNAPSHOT_FEATURE
+    // screen snapshot /snapshot
+    const httpd_uri_t screen_snapshot_handler_config = {
+        .uri = "/snapshot",
+        .method = HTTP_GET,
+        .handler = (esp_err_t(*)(httpd_req_t *))(
+            esp3dHttpService.screen_snapshot_handler),
+        .user_ctx = nullptr,
+        .is_websocket = false,
+        .handle_ws_control_frames = false,
+        .supported_subprotocol = nullptr};
+    if (ESP_OK !=
+        httpd_register_uri_handler(_server, &screen_snapshot_handler_config)) {
+      esp3d_log_e("screen snapshot handler registration failed");
+    }
+#endif  // ESP3D_SCREEN_SNAPSHOT_FEATURE
 
     // flash files /files
     const httpd_uri_t files_handler_config = {
@@ -709,6 +733,9 @@ void ESP3DHttpService::end() {
     httpd_unregister_uri(_server, "/");
     httpd_unregister_uri(_server, "/files");
     httpd_unregister_uri(_server, "/config");
+#if ESP3D_SCREEN_SNAPSHOT_FEATURE
+    httpd_unregister_uri(_server, "/snapshot");
+#endif  // ESP3D_SCREEN_SNAPSHOT_FEATURE
     httpd_unregister_uri(_server, "/ws");
 #if ESP3D_UPDATE_FEATURE
     httpd_unregister_uri(_server, "/updatefw");
