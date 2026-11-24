@@ -178,6 +178,9 @@ const ESP3DSettingDescription ESP3DSettingsData[] = {
      "100.00"},
     {ESP3DSettingIndex::esp3d_bed_depth, ESP3DSettingType::float_t, 3,
      "100.00"},
+    {ESP3DSettingIndex::esp3d_screen_brightness, ESP3DSettingType::byte_t, 1,
+     "100"},
+    {ESP3DSettingIndex::esp3d_screen_sleep, ESP3DSettingType::byte_t, 1, "0"},
 #endif  // ESP3D_DISPLAY_FEATURE
     {ESP3DSettingIndex::esp3d_stop_script, ESP3DSettingType::string_t,
      SIZE_OF_SCRIPT, ""},
@@ -415,6 +418,12 @@ bool ESP3DSettings::isValidByteSetting(uint8_t value,
       return true;  // 0 ->255 minutes
       break;
 #endif  // ESP3D_AUTHENTICATION_FEATURE
+#if ESP3D_DISPLAY_FEATURE
+    case ESP3DSettingIndex::esp3d_screen_brightness:
+      return value >= 10 && value <= 100;  // %
+    case ESP3DSettingIndex::esp3d_screen_sleep:
+      return true;  // minutes, 0 = never
+#endif  // ESP3D_DISPLAY_FEATURE
 #if ESP3D_USB_SERIAL_FEATURE
     case ESP3DSettingIndex::esp3d_output_client:
       return ((ESP3DClientType)value == ESP3DClientType::serial ||

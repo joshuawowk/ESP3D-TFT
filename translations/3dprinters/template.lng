@@ -100,6 +100,10 @@ l_96=Save
 l_97=Scan
 l_98=Refresh
 l_99=Connect
+l_100=Brightness
+l_101=Screen sleep
+l_102=Never
+l_103=%s min
 
 [info]
 creator=<creator>

@@ -70,6 +70,25 @@ lv_obj_t *serial_baud_rate_label = NULL;
 lv_obj_t *usb_serial_baud_rate_label = NULL;
 lv_obj_t *jog_type_label = NULL;
 lv_obj_t *polling_label = NULL;
+#if ESP3D_SCREEN_POWER_SETTINGS
+lv_obj_t *screen_brightness_label = NULL;
+lv_obj_t *screen_sleep_label = NULL;
+// Brightness choices (%) and sleep choices (minutes, 0 = never)
+static const uint8_t screen_brightness_choices[] = {20, 40, 60, 80, 100};
+static const uint8_t screen_sleep_choices[] = {0, 1, 2, 5, 10, 15, 30, 60};
+
+static std::string screen_brightness_text(uint8_t value) {
+  return std::to_string(value) + "%";
+}
+
+static std::string screen_sleep_text(uint8_t minutes) {
+  if (minutes == 0) {
+    return esp3dTranslationService.translate(ESP3DLabel::never);
+  }
+  return esp3dTranslationService.translate(ESP3DLabel::minutes_value,
+                                           std::to_string(minutes).c_str());
+}
+#endif  // ESP3D_SCREEN_POWER_SETTINGS
 lv_obj_t *auto_leveling_label = NULL;
 lv_obj_t *bed_width_label = NULL;
 lv_obj_t *bed_depth_label = NULL;
@@ -329,6 +348,17 @@ void setting_edit_done_cb(const char *str, void *data) {
                 return;
               }
               break;
+#if ESP3D_SCREEN_POWER_SETTINGS
+            case ESP3DSettingIndex::esp3d_screen_brightness:
+              val_byte = (uint8_t)atoi(str);  // "60%" -> 60
+              break;
+            case ESP3DSettingIndex::esp3d_screen_sleep:
+              val_byte = (strcmp(str, esp3dTranslationService.translate(
+                                          ESP3DLabel::never)) == 0)
+                             ? 0
+                             : (uint8_t)atoi(str);  // "5 min" -> 5
+              break;
+#endif  // ESP3D_SCREEN_POWER_SETTINGS
             case ESP3DSettingIndex::esp3d_auto_level_on:
             case ESP3DSettingIndex::esp3d_inverved_x:
             case ESP3DSettingIndex::esp3d_inverved_y:
@@ -467,6 +497,12 @@ void setting_edit_done_cb(const char *str, void *data) {
       case ESP3DSettingIndex::esp3d_polling_on:
         renderingClient.setPolling(val_byte);
         break;
+#if ESP3D_SCREEN_POWER_SETTINGS
+      case ESP3DSettingIndex::esp3d_screen_brightness:
+      case ESP3DSettingIndex::esp3d_screen_sleep:
+        esp3dTftui.applyScreenPowerSettings();
+        break;
+#endif  // ESP3D_SCREEN_POWER_SETTINGS
       case ESP3DSettingIndex::esp3d_inverved_x:
         manualLevelingScreen::invert_x(val_byte);
         break;
@@ -574,6 +610,22 @@ void event_button_edit_setting_cb(lv_event_t *e) {
       data.choices.push_back(
           esp3dTranslationService.translate(ESP3DLabel::absolute));  // absolute
       break;
+#if ESP3D_SCREEN_POWER_SETTINGS
+    case ESP3DSettingIndex::esp3d_screen_brightness:
+      data.label = screen_brightness_label;
+      title = esp3dTranslationService.translate(ESP3DLabel::screen_brightness);
+      for (uint8_t v : screen_brightness_choices) {
+        data.choices.push_back(screen_brightness_text(v));
+      }
+      break;
+    case ESP3DSettingIndex::esp3d_screen_sleep:
+      data.label = screen_sleep_label;
+      title = esp3dTranslationService.translate(ESP3DLabel::screen_sleep);
+      for (uint8_t v : screen_sleep_choices) {
+        data.choices.push_back(screen_sleep_text(v));
+      }
+      break;
+#endif  // ESP3D_SCREEN_POWER_SETTINGS
     case ESP3DSettingIndex::esp3d_polling_on:
       data.label = polling_label;
       title = esp3dTranslationService.translate(ESP3DLabel::polling);
@@ -946,6 +998,50 @@ void create() {
                           LV_EVENT_CLICKED, (void *)(&(settingPtr->index)));
     }
   }
+
+#if ESP3D_SCREEN_POWER_SETTINGS
+  if (esp3dTftui.hasBacklightControl()) {
+    // Screen brightness
+    line_container = listLine::create(ui_settings_list_ctl);
+    if (!lv_obj_is_valid(line_container)) {
+      esp3d_log_e("Failed to create line container");
+      return;
+    }
+    LabelStr = esp3dTranslationService.translate(ESP3DLabel::screen_brightness);
+    listLine::add_label(LabelStr.c_str(), line_container, true);
+    const ESP3DSettingDescription *brightnessPtr =
+        esp3dTftsettings.getSettingPtr(
+            ESP3DSettingIndex::esp3d_screen_brightness);
+    if (brightnessPtr) {
+      std::string value = screen_brightness_text(
+          esp3dTftsettings.readByte(ESP3DSettingIndex::esp3d_screen_brightness));
+      screen_brightness_label =
+          listLine::add_label(value.c_str(), line_container, true);
+      lv_obj_t *btnEdit = listLine::add_button(LV_SYMBOL_EDIT, line_container);
+      lv_obj_add_event_cb(btnEdit, event_button_edit_setting_cb,
+                          LV_EVENT_CLICKED, (void *)(&(brightnessPtr->index)));
+    }
+    // Screen sleep
+    line_container = listLine::create(ui_settings_list_ctl);
+    if (!lv_obj_is_valid(line_container)) {
+      esp3d_log_e("Failed to create line container");
+      return;
+    }
+    LabelStr = esp3dTranslationService.translate(ESP3DLabel::screen_sleep);
+    listLine::add_label(LabelStr.c_str(), line_container, true);
+    const ESP3DSettingDescription *sleepPtr =
+        esp3dTftsettings.getSettingPtr(ESP3DSettingIndex::esp3d_screen_sleep);
+    if (sleepPtr) {
+      std::string value = screen_sleep_text(
+          esp3dTftsettings.readByte(ESP3DSettingIndex::esp3d_screen_sleep));
+      screen_sleep_label =
+          listLine::add_label(value.c_str(), line_container, true);
+      lv_obj_t *btnEdit = listLine::add_button(LV_SYMBOL_EDIT, line_container);
+      lv_obj_add_event_cb(btnEdit, event_button_edit_setting_cb,
+                          LV_EVENT_CLICKED, (void *)(&(sleepPtr->index)));
+    }
+  }
+#endif  // ESP3D_SCREEN_POWER_SETTINGS
 
   // JSON
   //  show fan controls

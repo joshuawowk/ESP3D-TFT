@@ -73,6 +73,14 @@ esp_err_t bsp_accessFs(void);
  */
 esp_err_t bsp_releaseFs(void);
 
+/**
+ * @brief Sets the display backlight brightness (0-100 %, 0 = off).
+ *
+ * Optional: the UI uses it through a weak reference, so boards that do not
+ * provide it simply have no brightness / screen sleep control.
+ */
+esp_err_t bsp_set_backlight(uint8_t percent);
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
