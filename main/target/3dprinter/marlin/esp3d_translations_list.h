@@ -137,6 +137,7 @@ enum class ESP3DLabel : uint16_t {
   caption_lower,
   caption_z_offset,
   z_offset_saved,
+  time_left,
   unknown_index,  // must be last
 };
 

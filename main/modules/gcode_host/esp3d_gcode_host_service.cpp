@@ -94,6 +94,12 @@ static void esp3d_gcode_host_task(void* pvParameter) {
 /// @param file Const Char Pointer, to an array containing a command string, or
 /// a file system path.
 /// @return Returns a stream type, either FS, SD, single or multiple commands.
+// Print time of a stream: from when it started, not from when it was queued
+static uint64_t stream_duration(const ESP3DGcodeStream *stream) {
+  uint64_t start = stream->startTime ? stream->startTime : stream->id;
+  return esp3d_hal::millis() - start;
+}
+
 ESP3DGcodeHostStreamType ESP3DGCodeHostService::_getStreamType(
     const char* data) {  // maybe this can also check for invalid file
                          // extensions if not done elsewhere
@@ -500,6 +506,7 @@ bool ESP3DGCodeHostService::_startStream(ESP3DGcodeStream* stream) {
       esp3d_log("Add command: %s", cmd.c_str());
       _add_stream(cmd.c_str(), stream->auth_type, true);
       _command_number = 0;
+      stream->startTime = esp3d_hal::millis();
       esp3dTftValues.set_string_value(ESP3DValuesIndex::job_status,
                                       "processing");
       esp3dTftValues.set_string_value(ESP3DValuesIndex::file_name,
@@ -1338,7 +1345,7 @@ void ESP3DGCodeHostService::_handle_stream_states() {
             last_ellapsedtime = esp3d_hal::millis();
             esp3dTftValues.set_string_value(
                 ESP3DValuesIndex::job_duration,
-                std::to_string(esp3d_hal::millis() - _current_stream_ptr->id)
+                std::to_string(stream_duration(_current_stream_ptr))
                     .c_str());
           }
 
@@ -1623,12 +1630,12 @@ void ESP3DGCodeHostService::_handle_stream_states() {
                                           "100");
           esp3dTftValues.set_string_value(
               ESP3DValuesIndex::job_duration,
-              std::to_string(esp3d_hal::millis() - _current_stream_ptr->id)
+              std::to_string(stream_duration(_current_stream_ptr))
                   .c_str());
         }
         esp3dTftValues.set_string_value(
             ESP3DValuesIndex::job_duration,
-            std::to_string(esp3d_hal::millis() - _current_stream_ptr->id)
+            std::to_string(stream_duration(_current_stream_ptr))
                 .c_str());
       }
       if (!_endStream(_current_stream_ptr)) {
