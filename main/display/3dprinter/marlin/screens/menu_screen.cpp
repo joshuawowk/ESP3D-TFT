@@ -18,6 +18,7 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#include "screens/babystep_screen.h"
 #include "screens/menu_screen.h"
 
 #include <lvgl.h>
@@ -142,6 +143,11 @@ void menu_screen_delay_timer_cb(lv_timer_t *timer) {
     case ESP3DScreenType::main:
       mainScreen::create();
       break;
+#if ESP3D_BABYSTEP_SCREEN
+    case ESP3DScreenType::babystep:
+      babystepScreen::create(true);
+      break;
+#endif  // ESP3D_BABYSTEP_SCREEN
     case ESP3DScreenType::filament:
       filamentScreen::create();
       break;
@@ -203,6 +209,22 @@ void event_button_menu_back_handler(lv_event_t *e) {
  *
  * @param e The event object associated with the button click event.
  */
+#if ESP3D_BABYSTEP_SCREEN
+// Z offset from the menu: also reachable when the printer prints from its
+// own SD card (ESP3D-TFT then sees no job, so the main screen hides it)
+void event_button_babystep_handler(lv_event_t *e) {
+  esp3d_log("babystep Clicked");
+  if (menu_screen_delay_timer) return;
+  menu_next_screen = ESP3DScreenType::babystep;
+  if (ESP3D_BUTTON_ANIMATION_DELAY) {
+    menu_screen_delay_timer = lv_timer_create(
+        menu_screen_delay_timer_cb, ESP3D_BUTTON_ANIMATION_DELAY, NULL);
+  } else {
+    menu_screen_delay_timer_cb(NULL);
+  }
+}
+#endif  // ESP3D_BABYSTEP_SCREEN
+
 void event_button_filament_handler(lv_event_t *e) {
   esp3d_log("filament Clicked");
   if (menu_screen_delay_timer) return;
@@ -426,6 +448,18 @@ void create() {
   ESP3D_SET_CAPTION(main_btn_leveling, caption_leveling);
   lv_obj_add_event_cb(main_btn_leveling, event_button_leveling_handler,
                       LV_EVENT_CLICKED, NULL);
+#if ESP3D_BABYSTEP_SCREEN
+  // Create button for Z offset (babystepping)
+  lv_obj_t *btn_babystep = menuButton::create(ui_top_buttons_container,
+                                              LV_SYMBOL_UP "Z" LV_SYMBOL_DOWN);
+  if (!lv_obj_is_valid(btn_babystep)) {
+    esp3d_log_e("Failed to create babystep button");
+    return;
+  }
+  ESP3D_SET_CAPTION(btn_babystep, caption_z_offset);
+  lv_obj_add_event_cb(btn_babystep, event_button_babystep_handler,
+                      LV_EVENT_CLICKED, NULL);
+#endif  // ESP3D_BABYSTEP_SCREEN
 
   // Create button and label for disable steppers button
   main_btn_disable_steppers = symbolButton::create(

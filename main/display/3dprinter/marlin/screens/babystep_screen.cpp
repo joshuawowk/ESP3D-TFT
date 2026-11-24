@@ -33,6 +33,7 @@
 #include "esp3d_values.h"
 #include "rendering/esp3d_rendering_client.h"
 #include "screens/main_screen.h"
+#include "screens/menu_screen.h"
 #include "translations/esp3d_translation_service.h"
 
 namespace babystepScreen {
@@ -43,6 +44,7 @@ uint8_t babystep_buttons_map_id = 0;
 double babystep_total = 0.0;
 lv_obj_t *label_babystep_total = NULL;
 lv_timer_t *babystep_screen_delay_timer = NULL;
+bool babystep_from_menu = false;
 
 void reset_total() { babystep_total = 0.0; }
 
@@ -73,7 +75,11 @@ static void babystep_screen_delay_timer_cb(lv_timer_t *timer) {
     lv_timer_del(babystep_screen_delay_timer);
   }
   babystep_screen_delay_timer = NULL;
-  mainScreen::create();
+  if (babystep_from_menu) {
+    menuScreen::create();
+  } else {
+    mainScreen::create();
+  }
 }
 
 static void event_button_babystep_back_handler(lv_event_t *e) {
@@ -108,7 +114,8 @@ static void babystep_matrix_buttons_event_cb(lv_event_t *e) {
   esp3d_log("Step %s selected", babystep_buttons_map[babystep_buttons_map_id]);
 }
 
-void create() {
+void create(bool from_menu) {
+  babystep_from_menu = from_menu;
   esp3dTftui.set_current_screen(ESP3DScreenType::none);
   esp3d_log("Babystep screen creation");
   lv_obj_t *ui_new_screen = lv_obj_create(NULL);
