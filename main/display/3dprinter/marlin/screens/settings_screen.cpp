@@ -70,6 +70,20 @@ lv_obj_t *serial_baud_rate_label = NULL;
 lv_obj_t *usb_serial_baud_rate_label = NULL;
 lv_obj_t *jog_type_label = NULL;
 lv_obj_t *polling_label = NULL;
+#if ESP3D_PREHEAT_PRESETS
+#include "esp3d_preheat.h"
+static const ESP3DSettingIndex preheat_setting_index[ESP3D_PREHEAT_PRESET_COUNT] =
+    {ESP3DSettingIndex::esp3d_preheat_1, ESP3DSettingIndex::esp3d_preheat_2,
+     ESP3DSettingIndex::esp3d_preheat_3};
+lv_obj_t *preheat_labels[ESP3D_PREHEAT_PRESET_COUNT] = {NULL};
+
+static int preheat_index(ESP3DSettingIndex index) {
+  for (int i = 0; i < ESP3D_PREHEAT_PRESET_COUNT; i++) {
+    if (preheat_setting_index[i] == index) return i;
+  }
+  return -1;
+}
+#endif  // ESP3D_PREHEAT_PRESETS
 #if ESP3D_SCREEN_POWER_SETTINGS
 lv_obj_t *screen_brightness_label = NULL;
 lv_obj_t *screen_sleep_label = NULL;
@@ -419,6 +433,13 @@ void setting_edit_done_cb(const char *str, void *data) {
               case ESP3DSettingIndex::esp3d_hostname:
                 // use string as it is
                 break;
+#if ESP3D_PREHEAT_PRESETS
+              case ESP3DSettingIndex::esp3d_preheat_1:
+              case ESP3DSettingIndex::esp3d_preheat_2:
+              case ESP3DSettingIndex::esp3d_preheat_3:
+                // validated as "name,hotend,bed"
+                break;
+#endif  // ESP3D_PREHEAT_PRESETS
               case ESP3DSettingIndex::esp3d_bed_width:
               case ESP3DSettingIndex::esp3d_bed_depth:
                 val_string = esp3d_string::set_precision(str, 2);
@@ -662,6 +683,16 @@ void event_button_edit_setting_cb(lv_event_t *e) {
       data.label = hostname_label;
       title = esp3dTranslationService.translate(ESP3DLabel::hostname);
       break;
+#if ESP3D_PREHEAT_PRESETS
+    case ESP3DSettingIndex::esp3d_preheat_1:
+    case ESP3DSettingIndex::esp3d_preheat_2:
+    case ESP3DSettingIndex::esp3d_preheat_3: {
+      int i = preheat_index(data.index);
+      data.label = preheat_labels[i];
+      title = esp3dTranslationService.translate(
+          ESP3DLabel::preheat_preset, std::to_string(i + 1).c_str());
+    } break;
+#endif  // ESP3D_PREHEAT_PRESETS
     case ESP3DSettingIndex::esp3d_bed_width:
       data.label = bed_width_label;
       title = esp3dTranslationService.translate(ESP3DLabel::bed_width);
@@ -714,6 +745,15 @@ void event_button_edit_setting_cb(lv_event_t *e) {
                              setting_edit_done_cb, settingPtr->size, NULL,
                              false, (void *)(&data));
           break;
+#if ESP3D_PREHEAT_PRESETS
+        case ESP3DSettingIndex::esp3d_preheat_1:
+        case ESP3DSettingIndex::esp3d_preheat_2:
+        case ESP3DSettingIndex::esp3d_preheat_3:
+          textEditor::create(lv_scr_act(), data.value.c_str(),
+                             setting_edit_done_cb, settingPtr->size, NULL,
+                             false, (void *)(&data));
+          break;
+#endif  // ESP3D_PREHEAT_PRESETS
         case ESP3DSettingIndex::esp3d_bed_width:
         case ESP3DSettingIndex::esp3d_bed_depth:
           textEditor::create(lv_scr_act(), data.value.c_str(),
@@ -1042,6 +1082,32 @@ void create() {
     }
   }
 #endif  // ESP3D_SCREEN_POWER_SETTINGS
+
+#if ESP3D_PREHEAT_PRESETS
+  // Preheat presets: "name,hotend,bed"
+  for (int i = 0; i < ESP3D_PREHEAT_PRESET_COUNT; i++) {
+    line_container = listLine::create(ui_settings_list_ctl);
+    if (!lv_obj_is_valid(line_container)) {
+      esp3d_log_e("Failed to create line container");
+      return;
+    }
+    LabelStr = esp3dTranslationService.translate(
+        ESP3DLabel::preheat_preset, std::to_string(i + 1).c_str());
+    listLine::add_label(LabelStr.c_str(), line_container, true);
+    const ESP3DSettingDescription *presetPtr =
+        esp3dTftsettings.getSettingPtr(preheat_setting_index[i]);
+    if (presetPtr) {
+      char out_str[SIZE_OF_PREHEAT_PRESET + 1] = {0};
+      std::string value = esp3dTftsettings.readString(
+          preheat_setting_index[i], out_str, SIZE_OF_PREHEAT_PRESET);
+      preheat_labels[i] =
+          listLine::add_label(value.c_str(), line_container, true);
+      lv_obj_t *btnEdit = listLine::add_button(LV_SYMBOL_EDIT, line_container);
+      lv_obj_add_event_cb(btnEdit, event_button_edit_setting_cb,
+                          LV_EVENT_CLICKED, (void *)(&(presetPtr->index)));
+    }
+  }
+#endif  // ESP3D_PREHEAT_PRESETS
 
   // JSON
   //  show fan controls

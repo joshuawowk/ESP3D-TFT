@@ -131,6 +131,8 @@ enum class ESP3DLabel : uint16_t {
   screen_sleep,
   never,
   minutes_value,
+  preheating,
+  preheat_preset,
   unknown_index,  // must be last
 };
 

@@ -20,6 +20,8 @@
 */
 #include "esp3d_settings.h"
 
+#include "esp3d_preheat.h"
+
 #include "nvs_flash.h"
 #include "nvs_handle.hpp"
 
@@ -181,6 +183,12 @@ const ESP3DSettingDescription ESP3DSettingsData[] = {
     {ESP3DSettingIndex::esp3d_screen_brightness, ESP3DSettingType::byte_t, 1,
      "100"},
     {ESP3DSettingIndex::esp3d_screen_sleep, ESP3DSettingType::byte_t, 1, "0"},
+    {ESP3DSettingIndex::esp3d_preheat_1, ESP3DSettingType::string_t,
+     SIZE_OF_PREHEAT_PRESET, "PLA,200,60"},
+    {ESP3DSettingIndex::esp3d_preheat_2, ESP3DSettingType::string_t,
+     SIZE_OF_PREHEAT_PRESET, "PETG,235,80"},
+    {ESP3DSettingIndex::esp3d_preheat_3, ESP3DSettingType::string_t,
+     SIZE_OF_PREHEAT_PRESET, "ABS,245,100"},
 #endif  // ESP3D_DISPLAY_FEATURE
     {ESP3DSettingIndex::esp3d_stop_script, ESP3DSettingType::string_t,
      SIZE_OF_SCRIPT, ""},
@@ -253,6 +261,14 @@ bool ESP3DSettings::isValidStringSetting(const char* value,
     }
   }
   switch (settingElement) {
+#if ESP3D_DISPLAY_FEATURE
+    case ESP3DSettingIndex::esp3d_preheat_1:
+    case ESP3DSettingIndex::esp3d_preheat_2:
+    case ESP3DSettingIndex::esp3d_preheat_3: {
+      ESP3DPreheatPreset preset;
+      return esp3d_parse_preheat_preset(value, preset);
+    }
+#endif  // ESP3D_DISPLAY_FEATURE
 #if ESP3D_TIMESTAMP_FEATURE
     case ESP3DSettingIndex::esp3d_timezone:
       if (len != settingPtr->size - 1) {

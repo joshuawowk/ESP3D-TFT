@@ -28,6 +28,9 @@
 #define ESP3D_BUTTON_CAPTION_FONT (&lv_font_montserrat_16)
 #define ESP3D_BUTTON_CAPTION_GAP 2
 
+// Preheat preset buttons on the temperatures screen (needs captions)
+#define ESP3D_PREHEAT_PRESETS 1
+
 // Back button size
 #define ESP3D_BACK_BUTTON_WIDTH 80
 #define ESP3D_BACK_BUTTON_HEIGHT 66

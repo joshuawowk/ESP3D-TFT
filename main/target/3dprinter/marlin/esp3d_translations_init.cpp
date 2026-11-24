@@ -134,5 +134,7 @@ void ESP3DTranslationService::init() {
       {ESP3DLabel::screen_sleep, "Screen sleep"},
       {ESP3DLabel::never, "Never"},
       {ESP3DLabel::minutes_value, "%s min"},
+      {ESP3DLabel::preheating, "Preheating %s"},
+      {ESP3DLabel::preheat_preset, "Preset %s"},
   };
 }
