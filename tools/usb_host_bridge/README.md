@@ -95,7 +95,14 @@ idf.py -B build-bench -DSDKCONFIG=build-bench/sdkconfig \
   -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.bench" build
 ```
 
-The display should then show the simulator's temperatures. Logging is off in
+Then run the simulator on the bridge's UART port:
+
+```bash
+python3 tools/fw_simulator/fw_simulator_port.py /dev/ttyACM0 --move-delay 0.25
+```
+
+The display should then show the simulator's temperatures (`--move-delay`
+keeps a streamed test print running long enough to see the print screens). Logging is off in
 this mode so it does not mix with the G-code. Reflash the normal build before
 connecting the printer (plugging a printer in also takes over from the
 passthrough).

@@ -43,6 +43,19 @@ It is compiled on the same targets as `/snapshot` (display builds with web
 services and `LV_USE_SNAPSHOT 1`). Like `/command`, it is open to anyone on
 the network unless ESP3D authentication is enabled.
 
+## Helper script
+
+`tools/remote_screen/esp3d_remote.py` wraps these endpoints (standard library
+only):
+
+```bash
+python3 tools/remote_screen/esp3d_remote.py <ip> snapshot screen.bmp
+python3 tools/remote_screen/esp3d_remote.py <ip> tap 380 378
+python3 tools/remote_screen/esp3d_remote.py <ip> swipe 240 330 240 60
+python3 tools/remote_screen/esp3d_remote.py <ip> cmd "[ESP420]"
+python3 tools/remote_screen/esp3d_remote.py <ip> ota build/ESP3D-TFT.bin
+```
+
 ## To the SD card
 
 `[ESP216]SNAP` writes the same image as a raw `snapshot<millis>.raw` file to
