@@ -22,11 +22,14 @@ looking at the panel.
 ```bash
 curl "http://<esp3d-tft-ip>/touch?x=380&y=377"          # tap
 curl "http://<esp3d-tft-ip>/touch?x=240&y=240&ms=1500"  # long press
+curl "http://<esp3d-tft-ip>/touch?x=240&y=330&x2=240&y2=60"  # swipe up (scroll)
 ```
 
-`GET /touch?x=&y=[&ms=]` presses the screen at `(x, y)` for `ms`
+`GET /touch?x=&y=[&ms=][&x2=&y2=]` presses the screen at `(x, y)` for `ms`
 milliseconds (default 120, range 50 to 5000) through a second, virtual LVGL
-pointer device, then returns `ok` once LVGL has read the release. Taps are
+pointer device, then returns `ok` once LVGL has read the release. With
+`x2`/`y2` the press moves to that point over `ms` (default 400): a swipe,
+for example to scroll a list. Taps are
 serialised, so a script can chain them:
 
 ```bash

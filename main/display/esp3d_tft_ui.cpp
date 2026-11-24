@@ -171,19 +171,38 @@ void ESP3DTftUi::handleScreenPower() {
 
 #if ESP3D_REMOTE_TOUCH_FEATURE
 #include <atomic>
-// Virtual pointer fed by GET /touch. Read by LVGL in the UI task.
+// Virtual pointer fed by GET /touch. Read by LVGL in the UI task. A press
+// moves linearly from (x, y) to (x2, y2) over its duration (tap: same point).
 static std::atomic<int32_t> remote_touch_x{0};
 static std::atomic<int32_t> remote_touch_y{0};
+static std::atomic<int32_t> remote_touch_x2{0};
+static std::atomic<int32_t> remote_touch_y2{0};
+static std::atomic<int64_t> remote_touch_press_at{0};
 static std::atomic<int64_t> remote_touch_release_at{0};
 static std::atomic<bool> remote_touch_released{true};
 
 static void remote_touch_read(lv_indev_drv_t *drv, lv_indev_data_t *data) {
   (void)drv;
-  data->point.x = remote_touch_x;
-  data->point.y = remote_touch_y;
-  if (esp3d_hal::millis() < remote_touch_release_at) {
+  int64_t now = esp3d_hal::millis();
+  int64_t start = remote_touch_press_at;
+  int64_t end = remote_touch_release_at;
+  int32_t x = remote_touch_x, y = remote_touch_y;
+  int32_t x2 = remote_touch_x2, y2 = remote_touch_y2;
+  if (now < end) {
+    // Hold the end point for the last read period so a swipe finishes there
+    int64_t span = end - start - 2 * LV_INDEV_DEF_READ_PERIOD;
+    int64_t elapsed = now - start;
+    if (span <= 0 || elapsed >= span) {
+      elapsed = span = 1;
+    } else if (elapsed < 0) {
+      elapsed = 0;
+    }
+    data->point.x = x + (int32_t)((x2 - x) * elapsed / span);
+    data->point.y = y + (int32_t)((y2 - y) * elapsed / span);
     data->state = LV_INDEV_STATE_PR;
   } else {
+    data->point.x = x2;
+    data->point.y = y2;
     data->state = LV_INDEV_STATE_REL;
     remote_touch_released = true;
   }
@@ -199,8 +218,17 @@ static void remote_touch_register() {
   }
 }
 
-bool ESP3DTftUi::remoteTouch(int32_t x, int32_t y, uint32_t duration_ms) {
-  if (x < 0 || y < 0 || x >= LV_HOR_RES || y >= LV_VER_RES) {
+static bool remote_point_valid(int32_t x, int32_t y) {
+  return x >= 0 && y >= 0 && x < LV_HOR_RES && y < LV_VER_RES;
+}
+
+bool ESP3DTftUi::remoteTouch(int32_t x, int32_t y, uint32_t duration_ms,
+                             int32_t x2, int32_t y2) {
+  if (x2 < 0 && y2 < 0) {  // tap
+    x2 = x;
+    y2 = y;
+  }
+  if (!remote_point_valid(x, y) || !remote_point_valid(x2, y2)) {
     return false;
   }
   if (duration_ms < 50) duration_ms = 50;
@@ -211,8 +239,12 @@ bool ESP3DTftUi::remoteTouch(int32_t x, int32_t y, uint32_t duration_ms) {
   }
   remote_touch_x = x;
   remote_touch_y = y;
+  remote_touch_x2 = x2;
+  remote_touch_y2 = y2;
   remote_touch_released = false;
-  remote_touch_release_at = esp3d_hal::millis() + duration_ms;
+  int64_t now = esp3d_hal::millis();
+  remote_touch_press_at = now;
+  remote_touch_release_at = now + duration_ms;  // set last: starts the press
   // Hold the caller until LVGL has seen the release (input read period 30ms)
   esp3d_hal::wait(duration_ms);
   for (int i = 0; i < 50 && !remote_touch_released; i++) {
