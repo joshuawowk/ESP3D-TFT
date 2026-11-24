@@ -108,6 +108,9 @@ enum class ESP3DSettingIndex : uint16_t {
   esp3d_webdav_on,
   esp3d_screen_brightness,  // backlight %, if the board supports it
   esp3d_screen_sleep,       // minutes of inactivity before the screen sleeps
+  esp3d_preheat_1,          // preheat presets: "name,hotend,bed"
+  esp3d_preheat_2,
+  esp3d_preheat_3,
   unknown_index
 };
 

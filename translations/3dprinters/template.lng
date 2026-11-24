@@ -104,6 +104,8 @@ l_100=Brightness
 l_101=Screen sleep
 l_102=Never
 l_103=%s min
+l_104=Preheating %s
+l_105=Preset %s
 
 [info]
 creator=<creator>

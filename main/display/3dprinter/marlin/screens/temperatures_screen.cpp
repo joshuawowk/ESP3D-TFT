@@ -33,6 +33,11 @@
 #include "screens/filament_screen.h"
 #include "screens/main_screen.h"
 #include "translations/esp3d_translation_service.h"
+#if ESP3D_PREHEAT_PRESETS
+#include "esp3d_preheat.h"
+#include "esp3d_settings.h"
+#include "esp3d_values.h"
+#endif  // ESP3D_PREHEAT_PRESETS
 
 /**********************
  *  Namespace
@@ -396,6 +401,46 @@ void temperatures_btn_down_event_cb(lv_event_t *e) {
  *
  * @param e The event object containing information about the event.
  */
+#if ESP3D_PREHEAT_PRESETS
+#if !ESP3D_BUTTON_CAPTIONS
+#error "ESP3D_PREHEAT_PRESETS needs ESP3D_BUTTON_CAPTIONS for the temperatures"
+#endif
+static const ESP3DSettingIndex preheat_settings[ESP3D_PREHEAT_PRESET_COUNT] = {
+    ESP3DSettingIndex::esp3d_preheat_1, ESP3DSettingIndex::esp3d_preheat_2,
+    ESP3DSettingIndex::esp3d_preheat_3};
+
+static bool read_preheat_preset(uint8_t index, ESP3DPreheatPreset &preset) {
+  if (index >= ESP3D_PREHEAT_PRESET_COUNT) return false;
+  char buffer[SIZE_OF_PREHEAT_PRESET + 1] = {0};
+  const char *value = esp3dTftsettings.readString(
+      preheat_settings[index], buffer, SIZE_OF_PREHEAT_PRESET);
+  return esp3d_parse_preheat_preset(value, preset);
+}
+
+/**
+ * @brief Preheat preset button: set the selected extruder (extruder 0 when
+ * the bed is selected) and the bed to the preset temperatures.
+ */
+static void temperatures_btn_preheat_event_cb(lv_event_t *e) {
+  uint8_t index = (uint8_t)(uintptr_t)lv_event_get_user_data(e);
+  ESP3DPreheatPreset preset;
+  if (!read_preheat_preset(index, preset)) {
+    esp3d_log_e("Invalid preheat preset %d", index);
+    return;
+  }
+  uint8_t target = get_heater_buttons_map_id(heater_buttons_map_id);
+  std::string gcode = "M104 T" + std::to_string(target == 1 ? 1 : 0) + " S" +
+                      std::to_string(preset.hotend);
+  renderingClient.sendGcode(gcode.c_str());
+  gcode = "M140 S" + std::to_string(preset.bed);
+  renderingClient.sendGcode(gcode.c_str());
+  esp3dTftValues.set_string_value(
+      ESP3DValuesIndex::status_bar_label,
+      esp3dTranslationService.translate(ESP3DLabel::preheating,
+                                        preset.name.c_str()));
+}
+#endif  // ESP3D_PREHEAT_PRESETS
+
 void temperatures_btn_ok_event_cb(lv_event_t *e) {
   lv_obj_t *temperatures_ta = (lv_obj_t *)lv_event_get_user_data(e);
   std::string temperatures_value = lv_textarea_get_text(temperatures_ta);
@@ -809,6 +854,35 @@ void create(uint8_t target, ESP3DScreenType screenreturn) {
   ESP3D_SET_CAPTION(btn_stop, caption_off);
   lv_obj_add_event_cb(btn_stop, temperatures_btn_power_off_event_cb,
                       LV_EVENT_CLICKED, temperatures_ta);
+#if ESP3D_PREHEAT_PRESETS
+  // Preheat presets, in a row under Apply / Off
+  lv_obj_t *previous_preset = nullptr;
+  for (uint8_t i = 0; i < ESP3D_PREHEAT_PRESET_COUNT; i++) {
+    ESP3DPreheatPreset preset;
+    if (!read_preheat_preset(i, preset)) {
+      continue;
+    }
+    lv_obj_t *btn_preset = symbolButton::create(ui_new_screen,
+                                                preset.name.c_str());
+    if (!lv_obj_is_valid(btn_preset)) {
+      esp3d_log_e("Failed to create preheat button");
+      break;
+    }
+    if (previous_preset == nullptr) {
+      lv_obj_align_to(btn_preset, btn_set, LV_ALIGN_OUT_BOTTOM_LEFT, 0,
+                      ESP3D_BUTTON_PRESSED_OUTLINE);
+    } else {
+      lv_obj_align_to(btn_preset, previous_preset, LV_ALIGN_OUT_RIGHT_MID,
+                      ESP3D_BUTTON_PRESSED_OUTLINE, 0);
+    }
+    std::string temperatures =
+        std::to_string(preset.hotend) + "/" + std::to_string(preset.bed);
+    symbolButton::setCaption(btn_preset, temperatures.c_str());
+    lv_obj_add_event_cb(btn_preset, temperatures_btn_preheat_event_cb,
+                        LV_EVENT_CLICKED, (void *)(uintptr_t)i);
+    previous_preset = btn_preset;
+  }
+#endif  // ESP3D_PREHEAT_PRESETS
   // Keyboard
   lv_obj_t *temperatures_kb = lv_keyboard_create(ui_new_screen);
   if (!lv_obj_is_valid(temperatures_kb)) {
