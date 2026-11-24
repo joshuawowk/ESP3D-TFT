@@ -15,7 +15,8 @@
 #pragma once
 
 namespace babystepScreen {
-void create();
+// from_menu: Back returns to the menu instead of the main screen
+void create(bool from_menu = false);
 // Forget the offset applied so far (called when a new print starts)
 void reset_total();
 }  // namespace babystepScreen
