@@ -377,7 +377,7 @@ idf.py -p /dev/ttyUSB0 -b 460800 flash   <span class="c"># 921600 corrupts on th
   <div class="code" id="c2">cd tools/usb_host_bridge
 idf.py set-target esp32s3
 idf.py build
-idf.py -p /dev/ttyUSB1 flash monitor   <span class="c"># through the DevKitC "UART" port</span></div>
+idf.py -p /dev/ttyACM0 flash monitor   <span class="c"># the DevKitC "UART" port (CH343: ttyACM*, CP2102N: ttyUSB*)</span></div>
   <p style="color:var(--muted);font-size:14.5px">Once running, the bridge's native USB port is in host mode and no longer shows up on a PC. Hold BOOT and tap RESET to flash through it again.</p>
   <div class="codehead"><span>restore the display's factory firmware</span><button class="copy" data-for="c3">Copy</button></div>
   <div class="code" id="c3">esptool.py --chip esp32s3 -p /dev/ttyUSB0 -b 460800 write_flash 0x0 factory-backup.bin</div>
